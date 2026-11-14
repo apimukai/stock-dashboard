@@ -1,4 +1,4 @@
-﻿# US index constituents (S&P 500: Wikipedia, Nasdaq-100/Dow: slickcharts), fetched 2026-11-15
+﻿# US index constituents (S&P 500: Wikipedia, Nasdaq-100/Dow: slickcharts), fetched 2026-11-14
 symbol,yahoo,name,sector,dow30,ndx100,sp500
 A,A,Agilent Technologies,Health Care,0,0,1
 AAPL,AAPL,Apple Inc.,Information Technology,1,1,1
