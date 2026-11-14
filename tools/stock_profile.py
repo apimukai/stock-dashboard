@@ -3,6 +3,9 @@
 """
 import datetime as dt
 import html
+import os
+
+import anthropic
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -238,8 +241,69 @@ def render_metrics(sym: str):
     st.caption("💡 ชี้เมาส์ที่แต่ละช่องเพื่อดูความหมาย · สีเขียว/แดงเป็นเกณฑ์ทั่วไปเพื่อการศึกษา ไม่ใช่คำแนะนำการลงทุน")
 
     if i.get("longBusinessSummary"):
-        with st.expander("🏢 บริษัทนี้ทำธุรกิจอะไร (คำอธิบายจาก Yahoo Finance ภาษาอังกฤษ)", expanded=True):
-            st.markdown(f'<div class="pf-sum">{html.escape(i["longBusinessSummary"])}</div>', unsafe_allow_html=True)
+        render_summary(i["longBusinessSummary"])
+
+
+# ---------- business summary: ไทย + English ----------
+TRANSLATE_SYSTEM = (
+    "You translate company business descriptions from English into natural, easy-to-read Thai "
+    "for Thai retail investors. Keep company, brand and product names, tickers and units as they are "
+    "commonly written for Thai readers (usually in English). Keep every fact and number; add nothing. "
+    "Reply with the Thai translation only."
+)
+
+
+def _api_key():
+    """คีย์ Claude API จาก Streamlit secrets (บนเว็บ) หรือ environment variable (ในเครื่อง)"""
+    try:
+        k = st.secrets.get("ANTHROPIC_API_KEY")
+        if k:
+            return k
+    except Exception:  # ไม่มีไฟล์ secrets
+        pass
+    return os.environ.get("ANTHROPIC_API_KEY")
+
+
+@st.cache_data(ttl=30 * 24 * 3600, show_spinner="กำลังแปลเป็นภาษาไทย ...")
+def translate_th(text: str) -> str:
+    """แปลด้วย Claude แล้วเก็บ cache 30 วัน (ข้อความเดิม = ไม่เสียเงินซ้ำ)
+    ถ้าแปลไม่สำเร็จจะ raise เพื่อไม่ให้ผลที่ล้มเหลวถูก cache"""
+    client = anthropic.Anthropic(api_key=_api_key())
+    r = client.beta.messages.create(
+        model="claude-opus-5-5",
+        max_tokens=4000,
+        output_config={"effort": "low"},  # งานแปลสั้นๆ ไม่ต้องคิดลึก
+        betas=["server-side-fallback-2026-07-01"],
+        fallbacks="default",  # ถ้าโมเดลปฏิเสธ ให้ API ส่งต่อโมเดลสำรองเอง
+        system=TRANSLATE_SYSTEM,
+        messages=[{"role": "user", "content": text}],
+    )
+    if r.stop_reason == "refusal":
+        raise RuntimeError("translation refused")
+    th = "".join(b.text for b in r.content if b.type == "text").strip()
+    if not th:
+        raise RuntimeError("empty translation")
+    return th
+
+
+def render_summary(en: str):
+    with st.expander("🏢 บริษัทนี้ทำธุรกิจอะไร", expanded=True):
+        th, err = None, None
+        if _api_key():
+            try:
+                th = translate_th(en)
+            except anthropic.APIError as e:
+                err = f"แปลไม่สำเร็จ ({type(e).__name__})"
+            except RuntimeError as e:
+                err = f"แปลไม่สำเร็จ ({e})"
+        if th:
+            t1, t2 = st.tabs(["🇹🇭 ภาษาไทย", "🇬🇧 English (ต้นฉบับ)"])
+            t1.markdown(f'<div class="pf-sum">{html.escape(th)}</div>', unsafe_allow_html=True)
+            t1.caption("แปลอัตโนมัติด้วย Claude จากคำอธิบายของ Yahoo Finance · ถ้าข้อความไม่ชัด ดูต้นฉบับภาษาอังกฤษ")
+            t2.markdown(f'<div class="pf-sum">{html.escape(en)}</div>', unsafe_allow_html=True)
+        else:
+            st.markdown(f'<div class="pf-sum">{html.escape(en)}</div>', unsafe_allow_html=True)
+            st.caption(err or "ยังไม่ได้ตั้งค่า ANTHROPIC_API_KEY จึงแสดงเฉพาะภาษาอังกฤษ")
 
 
 def render_financials(sym: str):

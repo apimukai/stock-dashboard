@@ -3,3 +3,4 @@ yfinance==1.8.0
 plotly==7.1.0
 pandas>=2.2
 lxml>=5.0
+anthropic>=2.8
