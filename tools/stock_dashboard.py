@@ -9,6 +9,7 @@ SET ดีเลย์ ~15 นาที) ใช้เพื่อการศึ
 """
 import os
 import datetime as dt
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -204,6 +205,11 @@ def _bulk(yahoo_syms: tuple) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def now_th():
+    """เวลาไทย (เซิร์ฟเวอร์ Streamlit Cloud ใช้ UTC)"""
+    return dt.datetime.now(ZoneInfo("Asia/Bangkok"))
+
+
 def fmt(x, nd=2):
     return "-" if x is None or pd.isna(x) else f"{x:,.{nd}f}"
 
@@ -238,7 +244,7 @@ if not watchlist:
 # ---------------- Quote tiles (auto refresh) ----------------
 @st.fragment(run_every=refresh if refresh else None)
 def quote_board():
-    st.caption(f"อัปเดตล่าสุด: {dt.datetime.now():%Y-%m-%d %H:%M:%S}"
+    st.caption(f"อัปเดตล่าสุด: {now_th():%Y-%m-%d %H:%M:%S}"
                + (f" · รีเฟรชทุก {refresh} วินาที" if refresh else ""))
     cols = st.columns(min(5, len(watchlist)))
     rows = []
@@ -361,7 +367,7 @@ def cards_tab():
                 "ลงมากสุด": ("1D %", True), "มูลค่าซื้อขาย": (VALUE_COL, False)}[card_sort]
     b = b.sort_values(col, ascending=asc)
     st.caption(f"{universe} · {len(b)} หุ้น · ข้อมูลวันที่ {b['วันที่'].max() if len(b) else '-'} · "
-               f"ดึงล่าสุด {dt.datetime.now():%H:%M:%S} · % เทียบราคาปิดวันก่อน"
+               f"ดึงล่าสุด {now_th():%H:%M:%S} · % เทียบราคาปิดวันก่อน"
                + (" · ★ = อยู่ใน SET50" if b["star"].any() else "")
                + " · 👆 กดการ์ดเพื่อดูกราฟราคาของหุ้นตัวนั้น")
     st.markdown(CARD_CSS, unsafe_allow_html=True)
