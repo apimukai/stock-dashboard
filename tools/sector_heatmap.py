@@ -30,6 +30,21 @@ FINVIZ = [[0, "#f63538"], [0.5, "#414554"], [1, "#30cc5a"]]
 DIVERGE = [[0, "#b2182b"], [0.5, "#f2f2f2"], [1, "#1a7837"]]
 
 
+def clickable_table(container, df: pd.DataFrame, key: str, sym_col: str = "yahoo", **kw):
+    """ตารางที่คลิกแถวแล้วไปแท็บกราฟราคาของหุ้นนั้น (ใช้กลไก goto_sym เดียวกับการ์ด)"""
+    ss = st.session_state
+    nonce = ss.get("tbl_nonce", 0)  # เปลี่ยน key หลังคลิก เพื่อล้างแถวที่เลือกไว้ ไม่ให้กระโดดซ้ำ
+    cfg = dict(kw.pop("column_config", {}) or {})
+    cfg[sym_col] = None  # ซ่อนคอลัมน์รหัส Yahoo
+    ev = container.dataframe(df, key=f"{key}_{nonce}", on_select="rerun", selection_mode="single-row",
+                             hide_index=True, column_config=cfg, **kw)
+    rows = ev.selection.rows if ev is not None else []
+    if rows:
+        ss["goto_sym"] = df.iloc[rows[0]][sym_col]
+        ss["tbl_nonce"] = nonce + 1
+        st.rerun()
+
+
 @st.cache_data(ttl=300, show_spinner="กำลังดึงข้อมูล sector ETF ...")
 def sector_prices() -> pd.DataFrame:
     syms = [v[0] for v in SECTORS.values()] + ["SPY"]
@@ -198,10 +213,11 @@ def render_sector_heatmap(stocks: pd.DataFrame):
            "ราคา": st.column_config.NumberColumn(format="%,.2f"),
            **{c: st.column_config.NumberColumn(format="%+.2f%%") for c in ["1D %", "5D %", "1M %", "YTD %"]},
            "name": "บริษัท"}
-    cols = ["symbol", "name", "ราคา", "1D %", "5D %", "1M %", "YTD %", "cap"]
+    cols = ["symbol", "name", "ราคา", "1D %", "5D %", "1M %", "YTD %", "cap", "yahoo"]
     t1, t2 = st.columns(2)
     t1.markdown(f"**🚀 ขึ้นแรงสุด ({per2})**")
-    t1.dataframe(g.nlargest(10, per2)[cols], hide_index=True, use_container_width=True, column_config=cfg)
+    clickable_table(t1, g.nlargest(10, per2)[cols], "sec_up", use_container_width=True, column_config=cfg)
     t2.markdown(f"**🔻 ลงแรงสุด ({per2})**")
-    t2.dataframe(g.nsmallest(10, per2)[cols], hide_index=True, use_container_width=True, column_config=cfg)
-    st.caption(f"{SECTORS[sec][1]}: {len(g)} หุ้นใน S&P 500 · ดูกราฟ/ข้อมูลพื้นฐานรายตัวได้ที่แท็บ 📈 กราฟราคา และ 🔎 ข้อมูลพื้นฐาน")
+    clickable_table(t2, g.nsmallest(10, per2)[cols], "sec_down", use_container_width=True, column_config=cfg)
+    st.caption(f"{SECTORS[sec][1]}: {len(g)} หุ้นใน S&P 500 · 👆 คลิกแถวหุ้นเพื่อไปดูกราฟราคา "
+               "(แล้วสลับไปแท็บ 🔎 ข้อมูลพื้นฐาน ได้ หุ้นตัวเดียวกัน)")

@@ -20,7 +20,7 @@ import yfinance as yf
 from stock_profile import render_header, render_metrics, render_analyst, render_financials
 from world_markets import load_world, get_world, render_world, flag_url
 from index_fundamentals import render_index_fundamentals
-from sector_heatmap import render_sector_heatmap
+from sector_heatmap import render_sector_heatmap, clickable_table
 
 st.set_page_config(page_title="Stock Dashboard", page_icon="📈", layout="wide")
 
@@ -452,13 +452,14 @@ def overview_tab():
 
     st.subheader("ตารางหุ้นทั้งหมด")
     cols = ["symbol"] + (["name", "sector"] if market == "US" else ["star"]) + [
-        "ราคา", "เปลี่ยนแปลง", "1D %", "5D %", "1M %", "YTD %", "ห่างจุดสูงสุด 52W %", VALUE_COL]
+        "ราคา", "เปลี่ยนแปลง", "1D %", "5D %", "1M %", "YTD %", "ห่างจุดสูงสุด 52W %", VALUE_COL, "yahoo"]
     tbl = df[cols].sort_values(rcol, ascending=False).rename(columns={VALUE_COL: f"มูลค่าซื้อขาย ({unit})"})
     if "star" in tbl:
         tbl["star"] = tbl["star"].map({True: "✓", False: ""})
     pct = st.column_config.NumberColumn(format="%+.2f%%")
-    st.dataframe(tbl, hide_index=True, use_container_width=True, height=500,
-                 column_config={"star": st.column_config.TextColumn("SET50", width="small"),
+    st.caption("👆 คลิกแถวหุ้นเพื่อไปดูกราฟราคา")
+    clickable_table(st, tbl, "ov_tbl", use_container_width=True, height=500,
+                    column_config={"star": st.column_config.TextColumn("SET50", width="small"),
                                 "name": "ชื่อบริษัท",
                                 "ราคา": st.column_config.NumberColumn(format="%,.2f"),
                                 "เปลี่ยนแปลง": st.column_config.NumberColumn(format="%+,.2f"),
