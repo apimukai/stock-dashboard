@@ -1,0 +1,21 @@
+# โฟลเดอร์นี้มีไฟล์อื่นที่ไม่เกี่ยวกับ Dashboard (ข้อมูลท่องเที่ยว, zip ฯลฯ)
+# จึงไม่เอาขึ้น GitHub ทั้งหมด แต่เลือกเฉพาะไฟล์ที่ Dashboard ใช้
+/*
+!/.gitignore
+!/requirements.txt
+!/README.md
+!/.github/
+!/tools/
+
+# โฟลเดอร์ files: เอาเฉพาะไฟล์ข้อมูลที่ Dashboard และสคริปต์อัปเดตใช้
+!/files/
+/files/*
+!/files/assets_meta.csv
+!/files/assets_prices.csv
+!/files/set100.csv
+!/files/us_indices.csv
+!/files/world_indices.csv
+!/files/_SET.BK_history_import.csv
+
+__pycache__/
+*.pyc

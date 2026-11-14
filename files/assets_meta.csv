@@ -1,0 +1,38 @@
+﻿symbol,name,group,country,currency,fx_symbol,fx_mode,unit
+^GSPC,S&P 500,หุ้นสหรัฐฯ,สหรัฐฯ,USD,,,จุด
+^IXIC,Nasdaq Composite,หุ้นสหรัฐฯ,สหรัฐฯ,USD,,,จุด
+^DJI,Dow Jones,หุ้นสหรัฐฯ,สหรัฐฯ,USD,,,จุด
+^RUT,Russell 2000 (หุ้นเล็ก),หุ้นสหรัฐฯ,สหรัฐฯ,USD,,,จุด
+^SET.BK,SET Index,หุ้นเอเชีย,ไทย,THB,THB=X,div,จุด
+^N225,Nikkei 225,หุ้นเอเชีย,ญี่ปุ่น,JPY,JPY=X,div,จุด
+000001.SS,Shanghai Composite,หุ้นเอเชีย,จีน,CNY,CNY=X,div,จุด
+^HSI,Hang Seng,หุ้นเอเชีย,ฮ่องกง,HKD,HKD=X,div,จุด
+^KS11,KOSPI,หุ้นเอเชีย,เกาหลีใต้,KRW,KRW=X,div,จุด
+^TWII,Taiwan Weighted,หุ้นเอเชีย,ไต้หวัน,TWD,TWD=X,div,จุด
+^BSESN,Sensex,หุ้นเอเชีย,อินเดีย,INR,INR=X,div,จุด
+^JKSE,Jakarta Composite,หุ้นเอเชีย,อินโดนีเซีย,IDR,IDR=X,div,จุด
+^STOXX50E,Euro Stoxx 50,หุ้นยุโรป,ยูโรโซน,EUR,EURUSD=X,mul,จุด
+^GDAXI,DAX,หุ้นยุโรป,เยอรมนี,EUR,EURUSD=X,mul,จุด
+^FTSE,FTSE 100,หุ้นยุโรป,อังกฤษ,GBP,GBPUSD=X,mul,จุด
+^BVSP,Bovespa,หุ้นอเมริกาใต้,บราซิล,BRL,BRL=X,div,จุด
+GC=F,ทองคำ,สินค้าโภคภัณฑ์,โลก,USD,,,ดอลลาร์/ออนซ์
+SI=F,เงิน (Silver),สินค้าโภคภัณฑ์,โลก,USD,,,ดอลลาร์/ออนซ์
+CL=F,น้ำมันดิบ WTI,สินค้าโภคภัณฑ์,โลก,USD,,,ดอลลาร์/บาร์เรล
+BZ=F,น้ำมันดิบ Brent,สินค้าโภคภัณฑ์,โลก,USD,,,ดอลลาร์/บาร์เรล
+HG=F,ทองแดง,สินค้าโภคภัณฑ์,โลก,USD,,,ดอลลาร์/ปอนด์
+BTC-USD,Bitcoin,คริปโต,โลก,USD,,,ดอลลาร์
+ETH-USD,Ethereum,คริปโต,โลก,USD,,,ดอลลาร์
+TLT,พันธบัตรสหรัฐฯ ระยะยาว (TLT),พันธบัตร,สหรัฐฯ,USD,,,ดอลลาร์
+DX-Y.NYB,ดัชนีดอลลาร์ (DXY),ค่าเงินและดอกเบี้ย,สหรัฐฯ,USD,,,จุด
+^TNX,ยีลด์ US Treasury 10 ปี,ค่าเงินและดอกเบี้ย,สหรัฐฯ,USD,,,%
+THB=X,USD/THB,ค่าเงินและดอกเบี้ย,ไทย,THB,,,บาท/ดอลลาร์
+BRL=X,BRL=X,อัตราแลกเปลี่ยน (ใช้คำนวณ),,,,,
+CNY=X,CNY=X,อัตราแลกเปลี่ยน (ใช้คำนวณ),,,,,
+EURUSD=X,EURUSD=X,อัตราแลกเปลี่ยน (ใช้คำนวณ),,,,,
+GBPUSD=X,GBPUSD=X,อัตราแลกเปลี่ยน (ใช้คำนวณ),,,,,
+HKD=X,HKD=X,อัตราแลกเปลี่ยน (ใช้คำนวณ),,,,,
+IDR=X,IDR=X,อัตราแลกเปลี่ยน (ใช้คำนวณ),,,,,
+INR=X,INR=X,อัตราแลกเปลี่ยน (ใช้คำนวณ),,,,,
+JPY=X,JPY=X,อัตราแลกเปลี่ยน (ใช้คำนวณ),,,,,
+KRW=X,KRW=X,อัตราแลกเปลี่ยน (ใช้คำนวณ),,,,,
+TWD=X,TWD=X,อัตราแลกเปลี่ยน (ใช้คำนวณ),,,,,

@@ -1,0 +1,58 @@
+name: Update market data
+
+on:
+  schedule:
+    # ทุกวันจันทร์-ศุกร์ 22:30 UTC = 05:30 น. เวลาไทย (หลังตลาดสหรัฐฯ ปิด ได้ราคาปิดของทุกตลาดในวันนั้น)
+    - cron: "30 22 * * 1-5"
+    # วันที่ 1 ของทุกเดือน 23:00 UTC: อัปเดตรายชื่อหุ้นในดัชนีสหรัฐฯ
+    - cron: "0 23 1 * *"
+  workflow_dispatch: # กดรันเองได้จากแท็บ Actions
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install packages
+        run: pip install -r requirements.txt
+
+      - name: Update daily prices (files/assets_prices.csv)
+        # ถ้า Yahoo บล็อกชั่วคราว ลองใหม่สูงสุด 3 ครั้ง; สคริปต์จะเก็บข้อมูลเดิมไว้เสมอ
+        run: |
+          for i in 1 2 3; do
+            python tools/fetch_assets.py files && break
+            echo "retry $i"; sleep 60
+          done
+        continue-on-error: true
+
+      - name: Update US index constituents (files/us_indices.csv)
+        if: github.event.schedule == '0 23 1 * *' || github.event_name == 'workflow_dispatch'
+        # ถ้าดึงไม่สำเร็จ สคริปต์จะหยุดก่อนเขียนไฟล์ ไฟล์เดิมจึงไม่เสีย
+        run: python tools/fetch_us_lists.py
+        continue-on-error: true
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add files/*.csv
+          if git diff --staged --quiet; then
+            echo "No data changes"
+          else
+            git commit -m "Update market data $(date -u +%Y-%m-%d)"
+            git push
+          fi

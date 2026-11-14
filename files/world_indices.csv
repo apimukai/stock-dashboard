@@ -1,0 +1,18 @@
+# ดัชนีหลักรายประเทศ (Yahoo Finance) · flag = รหัสธงของ flagcdn.com · map_iso3 = ประเทศที่ระบายสีบนแผนที่ (คั่นด้วย ; เว้นว่าง = ไม่แสดงบนแผนที่)
+# kind: index = ดัชนี (สกุลท้องถิ่น) · etf = ETF ราคา USD · basket = ดัชนีหลายประเทศ ราคาสกุล currency แปลงเป็น USD
+# etf = ETF ที่ใช้ดึงข้อมูลพื้นฐาน (holdings, P/E, sector) · SET50 = คำนวณจากหุ้น SET50 เอง
+iso3,country,flag,region,yahoo,index_name,currency,kind,map_iso3,etf
+USA,United States,us,Americas,^GSPC,S&P 500,USD,index,USA,SPY
+USN,US Nasdaq,us,Americas,^IXIC,Nasdaq Composite,USD,index,,ONEQ
+USD,US Dow Jones,us,Americas,^DJI,Dow Jones Industrial Average,USD,index,,DIA
+USR,US Russell 2000,us,Americas,^RUT,Russell 2000 (small caps),USD,index,,IWM
+EUR,Europe (Eurozone),eu,Europe,^STOXX50E,Euro Stoxx 50,EUR,index,DEU;FRA;ITA;ESP;NLD;BEL;AUT;PRT;IRL;FIN;GRC;SVK;SVN;LTU;LVA;EST;LUX;HRV;CYP;MLT,FEZ
+CHN,China,cn,Asia,000001.SS,Shanghai Composite,CNY,index,CHN,ASHR
+TWN,Taiwan,tw,Asia,^TWII,TAIEX,TWD,index,TWN,EWT
+HKG,Hong Kong,hk,Asia,^HSI,Hang Seng,HKD,index,HKG,2800.HK
+JPN,Japan,jp,Asia,^N225,Nikkei 225,JPY,index,JPN,1321.T
+KOR,South Korea,kr,Asia,^KS11,KOSPI,KRW,index,KOR,EWY
+THA,Thailand,th,Asia,^SET.BK,SET Index,THB,index,THA,SET50
+VNM,Vietnam,vn,Asia,VNM,VanEck Vietnam ETF,VND,etf,VNM,VNM
+IND,India,in,Asia,^NSEI,Nifty 50,INR,index,IND,INDA
+LAT,EM Latin America,latam,Americas,DBX3.DE,MSCI EM Latin America (Xtrackers ETF),EUR,basket,BRA;MEX;CHL;COL;PER,ILF
