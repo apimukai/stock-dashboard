@@ -303,7 +303,7 @@ def render_summary(en: str):
             t2.markdown(f'<div class="pf-sum">{html.escape(en)}</div>', unsafe_allow_html=True)
         else:
             st.markdown(f'<div class="pf-sum">{html.escape(en)}</div>', unsafe_allow_html=True)
-            st.caption(err or "ยังไม่ได้ตั้งค่า ANTHROPIC_API_KEY จึงแสดงเฉพาะภาษาอังกฤษ")
+            st.caption(err or "คำอธิบายจาก Yahoo Finance (ภาษาอังกฤษ)")
 
 
 def render_financials(sym: str):
