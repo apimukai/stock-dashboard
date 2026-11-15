@@ -4,6 +4,7 @@
 ข้อมูล: SPDR Select Sector ETF + SPY จาก Yahoo Finance (ราคาปรับปันผลแล้ว = ผลตอบแทนรวมปันผล)
 """
 import datetime as dt
+import os
 
 import numpy as np
 import pandas as pd
@@ -124,6 +125,103 @@ def render_rotation_history(px: pd.DataFrame):
 
     if st.toggle("▶ แสดงภาพเคลื่อนไหว 52 สัปดาห์ก่อนวันที่เลือก", key="rh_anim"):
         render_rotation_animation(rot, weeks[weeks <= pick][-52:])
+    return pick
+
+
+# ======================= Breadth ย้อนหลัง =======================
+US_CSV = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "files", "us_indices.csv")
+SECTOR_TH = {gics: th for gics, (_, th) in SECTORS.items()}
+
+
+@st.cache_data(ttl=6 * 3600, show_spinner="กำลังดึงราคาหุ้น S&P 500 ย้อนหลัง 3 ปี (ครั้งแรกประมาณ 30 วินาที) ...")
+def breadth_history() -> dict:
+    """% หุ้นใน S&P 500 ที่ราคาปิดอยู่เหนือ MA50 / MA200 ของแต่ละวัน ทั้งตลาดและรายกลุ่ม"""
+    u = pd.read_csv(US_CSV, comment="#", encoding="utf-8-sig")
+    u = u[u["sp500"] == 1]
+    d = yf.download(list(u["yahoo"]), period="3y", interval="1d", progress=False, auto_adjust=True,
+                    threads=True)["Close"]
+    d.index = pd.DatetimeIndex(d.index.tz_localize(None) if d.index.tz is not None else d.index)
+    sec = dict(zip(u["yahoo"], u["sector"]))
+    out = {}
+    for n in (50, 200):
+        ma = d.rolling(n, min_periods=n).mean()
+        above = (d > ma).where(ma.notna())  # NaN = ยังมีข้อมูลไม่พอคำนวณ MA
+        ok = above.notna().sum(axis=1) > 0.8 * d.shape[1]  # ใช้เฉพาะวันที่หุ้นส่วนใหญ่มี MA แล้ว
+        out[f"all{n}"] = (above.mean(axis=1) * 100)[ok]
+        by = above.T.groupby(above.columns.map(sec)).mean().T * 100
+        out[f"sec{n}"] = by[ok]
+    return out
+
+
+def render_breadth_history(px: pd.DataFrame, pick: pd.Timestamp):
+    st.markdown("#### 📶 Breadth ย้อนหลัง (S&P 500)")
+    b = breadth_history()
+    a50, a200 = b["all50"], b["all200"]
+    first, last = a200.index[0], a200.index[-1]
+    if pick < first:
+        st.info(f"Breadth ย้อนหลังมีข้อมูลตั้งแต่ {first:%d %b %Y} (ต้องใช้ราคา 200 วันก่อนหน้าเพื่อคำนวณ MA200) "
+                f"วันที่เลือก {pick:%d %b %Y} เก่ากว่านั้น จึงแสดงกราฟช่วงทั้งหมดแทน")
+    at = a200.index[a200.index <= pick]
+    at = at[-1] if len(at) else None
+
+    m = st.columns(4)
+    if at is not None:
+        m[0].metric(f"เหนือ MA50 ณ {at:%d %b %Y}", f"{a50.get(at, float('nan')):.0f}%",
+                    f"วันนี้ {a50.iloc[-1]:.0f}%", delta_color="off")
+        m[1].metric(f"เหนือ MA200 ณ {at:%d %b %Y}", f"{a200[at]:.0f}%", f"วันนี้ {a200.iloc[-1]:.0f}%",
+                    delta_color="off")
+        spy = px["SPY"].dropna()
+        i = spy.index.searchsorted(at)
+        for col, (lab, n) in zip(m[2:], [("S&P 500 ใน 1 เดือนถัดไป", 21), ("S&P 500 ใน 3 เดือนถัดไป", 63)]):
+            col.metric(lab, f"{(spy.iloc[i + n] / spy.iloc[i] - 1) * 100:+.1f}%" if i + n < len(spy) else "-")
+
+    # กราฟเส้น % เหนือ MA + SPY แยกกราฟ (ไม่ใช้ 2 แกน)
+    f = go.Figure()
+    f.add_trace(go.Scatter(x=a50.index, y=a50, name="% เหนือ MA50", line=dict(color="#4292c6", width=1.5)))
+    f.add_trace(go.Scatter(x=a200.index, y=a200, name="% เหนือ MA200", line=dict(color="#08519c", width=2.5)))
+    f.add_hline(y=50, line_dash="dot", line_color="gray")
+    if at is not None:
+        f.add_vline(x=at, line_dash="dash", line_color="#d62728")
+    f.update_layout(height=320, margin=dict(l=10, r=10, t=10, b=10), hovermode="x unified",
+                    legend=dict(orientation="h", y=1.1), yaxis=dict(range=[0, 100], ticksuffix="%"))
+    st.plotly_chart(f, use_container_width=True)
+    spy = px["SPY"][(px.index >= first) & (px.index <= last)]
+    f2 = go.Figure(go.Scatter(x=spy.index, y=spy, name="SPY", line=dict(color="#898781", width=1.5)))
+    if at is not None:
+        f2.add_vline(x=at, line_dash="dash", line_color="#d62728")
+    f2.update_layout(height=170, margin=dict(l=10, r=10, t=25, b=10), title="ราคา S&P 500 (SPY) ช่วงเดียวกัน",
+                     hovermode="x unified")
+    st.plotly_chart(f2, use_container_width=True)
+    st.caption("เส้นประสีแดง = วันที่เลือก (ใช้ตัวเลื่อนเดียวกับ Sector Rotation ด้านบน) · "
+               "เหนือ 50% = ขาขึ้นกระจายตัวดี · ถ้าดัชนีทำจุดสูงใหม่แต่ breadth ลดลง = ขึ้นด้วยหุ้นไม่กี่ตัว (divergence)")
+
+    # Heatmap รายกลุ่ม รายสัปดาห์
+    s200 = b["sec200"]
+    wk = s200.iloc[::-5].iloc[::-1]
+    order = s200.iloc[-1].sort_values().index
+    f3 = go.Figure(go.Heatmap(
+        z=wk[order].T.values, x=wk.index, y=[SECTOR_TH.get(s, s) for s in order], zmin=0, zmax=100,
+        colorscale=[[0, "#b2182b"], [0.5, "#f2f2f2"], [1, "#1a7837"]],
+        colorbar=dict(title="%", ticksuffix="%", thickness=12),
+        hovertemplate="%{y}<br>%{x|%d %b %Y}<br>เหนือ MA200 %{z:.0f}%<extra></extra>"))
+    if at is not None:
+        f3.add_vline(x=at, line_dash="dash", line_color="#111")
+    f3.update_layout(height=420, margin=dict(l=10, r=10, t=30, b=10), title="% หุ้นเหนือ MA200 รายกลุ่ม (รายสัปดาห์)")
+    st.plotly_chart(f3, use_container_width=True)
+
+    if at is not None:
+        snap = pd.DataFrame({"กลุ่ม": [SECTOR_TH.get(s, s) for s in s200.columns],
+                             "เหนือ MA50 %": b["sec50"].loc[at].values if at in b["sec50"].index else np.nan,
+                             "เหนือ MA200 %": s200.loc[at].values,
+                             "เหนือ MA200 วันนี้ %": s200.iloc[-1].values}).sort_values("เหนือ MA200 %", ascending=False)
+        snap["เปลี่ยนจากวันนั้น"] = snap["เหนือ MA200 วันนี้ %"] - snap["เหนือ MA200 %"]
+        pc = st.column_config.NumberColumn(format="%.0f%%")
+        st.dataframe(snap, hide_index=True, use_container_width=True, column_config={
+            "เหนือ MA50 %": pc, "เหนือ MA200 %": pc, "เหนือ MA200 วันนี้ %": pc,
+            "เปลี่ยนจากวันนั้น": st.column_config.NumberColumn(format="%+.0f จุด")})
+    st.caption(f"ข้อมูล {first:%d %b %Y} – {last:%d %b %Y} · ราคาปรับปันผลแล้ว (ตัวเลขจึงต่างจากแท็บ Heatmap เล็กน้อย) · "
+               "⚠️ ใช้รายชื่อหุ้น S&P 500 ปัจจุบัน ไม่ใช่รายชื่อ ณ วันนั้น (survivorship bias) "
+               "หุ้นที่ถูกถอดออกไปแล้วจึงไม่ถูกนับ")
 
 
 def render_rotation_animation(rot: dict, wk: pd.DatetimeIndex):
@@ -303,6 +401,9 @@ def look_now(px: pd.DataFrame, top_n: int, lb_months: int):
 def render_history_tab():
     px = long_prices()
     st.caption(f"ข้อมูล {px.index[0]:%Y}–{px.index[-1]:%d %b %Y} · SPDR Select Sector ETF + SPY · ราคาปรับปันผล (Yahoo Finance)")
-    render_rotation_history(px)
+    pick = render_rotation_history(px)
+    st.divider()
+    if st.toggle("📶 แสดง Breadth ย้อนหลัง (S&P 500 · โหลดครั้งแรกประมาณ 30 วินาที)", value=True, key="bh_on"):
+        render_breadth_history(px, pick)
     st.divider()
     render_backtest(px)
