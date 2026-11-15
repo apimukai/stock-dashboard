@@ -403,7 +403,8 @@ def overview_tab():
     if market == "WORLD":
         render_world(df)
         return
-    rcol = st.radio("วัดผลตอบแทนช่วง", ["1D %", "5D %", "1M %", "YTD %"], horizontal=True, key="ov_rcol")
+    rcol = st.radio("วัดผลตอบแทนช่วง", ["1D %", "5D %", "1M %", "YTD %"], index=3, horizontal=True,
+                    key="ov_rcol")  # ค่าเริ่มต้น: YTD
 
     up, down = int((df[rcol] > 0).sum()), int((df[rcol] < 0).sum())
     m1, m2, m3, m4 = st.columns(4)

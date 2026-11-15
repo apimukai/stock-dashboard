@@ -127,7 +127,7 @@ def render_world(df: pd.DataFrame):
     c1, c2, c3 = st.columns([1.3, 1.4, 1])
     p = c1.radio("ช่วงเวลา", PERIODS, index=3, horizontal=True, key="w_period")
     basis = c2.radio("วัดผลตอบแทนเป็น", ["USD (มุมมองนักลงทุนต่างชาติ)", "สกุลเงินท้องถิ่น"],
-                     horizontal=True, key="w_basis")
+                     index=1, horizontal=True, key="w_basis")  # ค่าเริ่มต้น: สกุลเงินท้องถิ่น
     scope = c3.selectbox("โฟกัส", ["ทั้งโลก", "เอเชีย", "ยุโรป"], key="w_scope")
     col = f"{p} usd" if basis.startswith("USD") else f"{p} local"
     d = df.dropna(subset=[col]).copy()
