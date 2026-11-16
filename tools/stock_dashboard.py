@@ -22,6 +22,7 @@ from world_markets import load_world, get_world, render_world, flag_url
 from index_fundamentals import render_index_fundamentals
 from sector_heatmap import render_sector_heatmap, clickable_table
 from history_backtest import render_history_tab
+from market_allocation import render_allocation_tab
 
 st.set_page_config(page_title="Stock Dashboard", page_icon="📈", layout="wide")
 
@@ -287,9 +288,9 @@ all_syms = list(dict.fromkeys(watchlist + list(world["yahoo"]) + list(set100["ya
 names.update({r.yahoo: r.name for r in us.itertuples()})
 names.update({r.yahoo: f"{r.country} · {r.index_name}" for r in world.itertuples()})
 
-TAB_CARDS, TAB_OVERVIEW, TAB_SECTOR, TAB_HIST, TAB_FUND, TAB_CHART, TAB_COMPARE = (
-    "💳 การ์ดราคาหุ้น", "🗺️ ภาพรวมตลาด", "🔥 US Sector Heatmap", "⏪ ย้อนหลัง & Backtest", "🔎 ข้อมูลพื้นฐาน",
-    "📈 กราฟราคา", "📊 เปรียบเทียบผลตอบแทน")
+TAB_CARDS, TAB_OVERVIEW, TAB_SECTOR, TAB_HIST, TAB_ALLOC, TAB_FUND, TAB_CHART, TAB_COMPARE = (
+    "💳 การ์ดราคาหุ้น", "🗺️ ภาพรวมตลาด", "🔥 US Sector Heatmap", "⏪ ย้อนหลัง & Backtest", "⚖️ สัดส่วนหุ้น-พันธบัตร",
+    "🔎 ข้อมูลพื้นฐาน", "📈 กราฟราคา", "📊 เปรียบเทียบผลตอบแทน")
 
 # หุ้นที่เลือก (sel_sym) ใช้ร่วมกันระหว่างแท็บข้อมูลพื้นฐานกับแท็บกราฟ
 ss = st.session_state
@@ -318,8 +319,8 @@ market = UNIVERSES[universe][0]
 unit = "ลบ." if market == "TH" else "ล้าน $"
 VALUE_COL = "มูลค่าซื้อขาย (ล้าน)"
 
-tab4, tab3, tab_sec, tab_hist, tab_fund, tab1, tab2 = st.tabs([TAB_CARDS, TAB_OVERVIEW, TAB_SECTOR, TAB_HIST,
-                                                               TAB_FUND, TAB_CHART, TAB_COMPARE],
+tab4, tab3, tab_sec, tab_hist, tab_alloc, tab_fund, tab1, tab2 = st.tabs(
+    [TAB_CARDS, TAB_OVERVIEW, TAB_SECTOR, TAB_HIST, TAB_ALLOC, TAB_FUND, TAB_CHART, TAB_COMPARE],
                                            key="main_tabs",
                                  on_change="rerun")  # เปิดการจำแท็บ เพื่อให้สลับแท็บจากโค้ดได้
 
@@ -486,6 +487,11 @@ with tab_sec:
 with tab_hist:
     if getattr(tab_hist, "open", True):  # ดึงข้อมูลเฉพาะตอนเปิดแท็บนี้
         render_history_tab()
+
+# ---------------- Stock/bond allocation model ----------------
+with tab_alloc:
+    if getattr(tab_alloc, "open", True):  # ดึงข้อมูลเฉพาะตอนเปิดแท็บนี้
+        render_allocation_tab()
 
 # ---------------- Fundamentals ----------------
 with tab_fund:

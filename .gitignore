@@ -15,6 +15,7 @@
 !/files/set100.csv
 !/files/us_indices.csv
 !/files/world_indices.csv
+!/files/sp500_valuation_monthly.csv
 !/files/_SET.BK_history_import.csv
 
 __pycache__/
