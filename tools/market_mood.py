@@ -98,10 +98,82 @@ def zone_stats(sc: pd.DataFrame, start=None, end=None) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+# ======================= สัญญาณเตือนล่วงหน้า: เครดิต + breadth แย่ ขณะดัชนีใกล้จุดสูงสุด =======================
+# กติกาตั้งไว้ก่อนทดสอบ (ไม่จูน): ใช้กลุ่ม SPDR 9 กลุ่มดั้งเดิม เพื่อให้ตรงกับ backtest ย้อนหลังถึงปี 1999
+WARN_SECTORS = ["XLK", "XLF", "XLE", "XLV", "XLI", "XLY", "XLP", "XLU", "XLB"]
+WARN_GAP = 63  # นับเป็นสัญญาณใหม่เมื่อห่างจากครั้งก่อนอย่างน้อย 63 วันทำการ (~3 เดือน)
+WARN_TEST = pd.DataFrame([  # ผล backtest S&P 500 ปี 1995–2026 (ใช้ VWEHX/VFITX แทน HYG/IEF ช่วงก่อน 2007)
+    {"สัญญาณ": "ทุกวัน (ฐานเปรียบเทียบ)", "จำนวนครั้ง": None, "ผลตอบแทน 3 เดือนถัดไป": 2.5, "โอกาสโดนลง ≥10% ใน 3 เดือน": 15},
+    {"สัญญาณ": "🚨 เครดิต + breadth แย่ ใกล้จุดสูงสุด", "จำนวนครั้ง": 6, "ผลตอบแทน 3 เดือนถัดไป": 0.6, "โอกาสโดนลง ≥10% ใน 3 เดือน": 33},
+    {"สัญญาณ": "โลภสุดขีด (สไตล์ Bull & Bear > 8)", "จำนวนครั้ง": 45, "ผลตอบแทน 3 เดือนถัดไป": 2.4, "โอกาสโดนลง ≥10% ใน 3 เดือน": 4},
+    {"สัญญาณ": "กลัวสุดขีด (< 2)", "จำนวนครั้ง": 40, "ผลตอบแทน 3 เดือนถัดไป": 2.8, "โอกาสโดนลง ≥10% ใน 3 เดือน": 22},
+])
+
+
+def divergence_warning(d: pd.DataFrame) -> pd.DataFrame:
+    """เตือนเมื่อ (1) หุ้นกู้ขยะอ่อนกว่าพันธบัตรรัฐ ผิดปกติ (2) กลุ่มอุตสาหกรรมไม่เกินครึ่งอยู่เหนือ MA200
+    แต่ (3) S&P 500 ยังห่างจุดสูงสุด 52 สัปดาห์ไม่เกิน 5% = ดัชนีดูดีแต่ข้างในเริ่มผุ"""
+    spy = d["SPY"]
+    ratio = d["HYG"] / d["IEF"]
+    cred_mom = ratio / ratio.rolling(63).mean() - 1
+    cred_pct = cred_mom.rolling(504, min_periods=252).rank(pct=True) * 100
+    sec = d[WARN_SECTORS]
+    ma = sec.rolling(200).mean()
+    breadth = (sec > ma).where(ma.notna()).mean(axis=1) * 100
+    off_high = (spy / spy.rolling(252).max() - 1) * 100
+    w = pd.DataFrame({"credit_pct": cred_pct, "breadth200": breadth, "off_high": off_high})
+    w["c_credit"] = w["credit_pct"] < 20
+    w["c_breadth"] = w["breadth200"] <= 50
+    w["c_high"] = w["off_high"] >= -5
+    w["warn"] = w["c_credit"] & w["c_breadth"] & w["c_high"]
+    onset, last = [], None
+    for i, (t, v) in enumerate(w["warn"].items()):
+        new = bool(v) and (last is None or i - last >= WARN_GAP)
+        onset.append(new)
+        if new:
+            last = i
+    w["onset"] = onset
+    return w.dropna(subset=["credit_pct", "breadth200"])
+
+
+def render_warning(w: pd.DataFrame, at):
+    st.markdown("#### 🚨 สัญญาณเตือนล่วงหน้า: ข้างในตลาดเริ่มผุ ขณะดัชนียังดูดี")
+    r = w.loc[w.index[w.index <= at][-1]]
+    on = bool(r["warn"])
+    recent = w[(w.index <= at) & w["onset"]]
+    last_on = recent.index[-1] if len(recent) else None
+    cols = st.columns([1.3, 1, 1, 1])
+    with cols[0]:
+        if on:
+            st.error("🚨 **สัญญาณเตือนทำงาน** ครบทั้ง 3 เงื่อนไข")
+        else:
+            st.success(f"✅ ไม่มีสัญญาณเตือน (ครบ {int(r[['c_credit', 'c_breadth', 'c_high']].sum())}/3 เงื่อนไข)")
+        st.caption("ครั้งล่าสุด: " + (f"{last_on:%d %b %Y}" if last_on is not None else "ไม่มีในช่วงข้อมูล"))
+    for col, ok, lab, val, rule in [
+        (cols[1], r["c_credit"], "เครดิต (HYG vs IEF)", f"{r['credit_pct']:.0f}", "percentile · เตือนเมื่อ < 20"),
+        (cols[2], r["c_breadth"], "% กลุ่มเหนือ MA200", f"{r['breadth200']:.0f}%", "เตือนเมื่อ ≤ 50%"),
+        (cols[3], r["c_high"], "ห่างจุดสูงสุด 52 สัปดาห์", f"{r['off_high']:.1f}%", "เข้าเงื่อนไขเมื่อไม่เกิน −5%"),
+    ]:
+        col.metric(("🔴 " if ok else "⚪ ") + lab, val, rule, delta_color="off")
+    with st.expander("ผลทดสอบย้อนหลังและข้อควรระวัง"):
+        st.dataframe(WARN_TEST, hide_index=True, use_container_width=True, column_config={
+            "ผลตอบแทน 3 เดือนถัดไป": st.column_config.NumberColumn(format="%+.1f%%"),
+            "โอกาสโดนลง ≥10% ใน 3 เดือน": st.column_config.NumberColumn(format="%.0f%%")})
+        st.markdown(
+            "- ทดสอบ S&P 500 ปี 1995–2026: เตือนก่อนยอดปี **2000 (11 วัน)** และ **2018 (62 วัน)** "
+            "แต่ **ไม่เตือน** รอบ 2007, 2020, 2022, 2025\n"
+            "- เกิดแค่ **6 ครั้งใน 30 ปี** จำนวนน้อยเกินจะเชื่อได้เต็มที่ ใช้เป็นธงเตือนให้ระวัง ไม่ใช่สัญญาณขายทันที\n"
+            "- ถ้าขายออกตามสัญญาณนี้อย่างเดียว การขาดทุนสูงสุดแทบไม่ลด (−55%) ที่ลดได้จริงคือกฎ MA200 (−23%) "
+            "เมื่อใช้คู่กัน Sharpe ดีขึ้นเล็กน้อย 0.83 → 0.87\n"
+            "- ตัวชี้วัดจากผลสำรวจผู้จัดการกองทุน (FMS Cash) และกระแสเงินกองทุน (Fund Flow) เป็นข้อมูลเสียเงิน จึงไม่ได้รวม")
+    return w[w["onset"]].index
+
+
 # ======================= UI =======================
 def render_mood_tab():
     d = mood_data()
     sc, raw = compute_mood(d)
+    warn = divergence_warning(d)
     last = sc.index[-1]
     st.caption(f"ต้นแบบเฟส 1 · ตลาดสหรัฐฯ · ข้อมูล {sc.index[0]:%b %Y} – {last:%d %b %Y} · "
                "คะแนน 0 = กลัวสุดขีด, 100 = โลภสุดขีด · ตัวชี้วัด 7 ตัว น้ำหนักเท่ากัน")
@@ -150,6 +222,8 @@ def render_mood_tab():
         st.plotly_chart(f, use_container_width=True)
         st.caption("แต่ละตัวคือ percentile เทียบ 1 ปีย้อนหลัง (50 = ปกติ) · ชี้เมาส์ที่แท่งเพื่อดูความหมาย")
 
+    warn_dates = render_warning(warn, at)
+
     # ----- กราฟย้อนหลัง -----
     st.markdown("#### 📈 คะแนนย้อนหลังเทียบ S&P 500")
     rng = st.radio("ช่วงที่แสดง", ["1 ปี", "3 ปี", "5 ปี", "ทั้งหมด"], index=1, horizontal=True, key="mood_rng")
@@ -164,6 +238,10 @@ def render_mood_tab():
     f.add_trace(go.Scatter(x=h.index, y=smooth, name="เฉลี่ย 5 วัน", line=dict(color="#222", width=2)), row=1, col=1)
     f.add_trace(go.Scatter(x=h.index, y=h["spy"], name="S&P 500 (SPY)", line=dict(color="#2a78d6", width=1.5)),
                 row=2, col=1)
+    wd = [t for t in warn_dates if t >= h.index[0]]
+    if wd:
+        f.add_trace(go.Scatter(x=wd, y=h["spy"].reindex(wd), mode="markers", name="🚨 สัญญาณเตือน",
+                               marker=dict(symbol="triangle-down", size=12, color="#d62728")), row=2, col=1)
     if h.index[0] <= at <= h.index[-1]:
         f.add_vline(x=at, line_dash="dash", line_color="#d62728")
     f.update_yaxes(range=[0, 100], title_text="คะแนน", row=1, col=1)
