@@ -532,6 +532,56 @@ def _detail(t: pd.DataFrame, px: dict, sym: str):
     st.plotly_chart(f, use_container_width=True)
 
 
+HL_CSS = """
+<style>
+[class*="st-key-hl_"] button{min-height:0;padding:2px 10px;border-radius:999px;font-size:.85rem;line-height:1.5}
+[class*="st-key-hl_"] button p{font-size:.85rem;font-variant-numeric:tabular-nums}
+.st-key-hl_strong button{background:rgba(27,120,55,.12);border-color:rgba(27,120,55,.55)}
+.st-key-hl_watch button{background:rgba(212,160,23,.14);border-color:rgba(212,160,23,.6)}
+.st-key-hl_purple button{background:rgba(123,44,191,.12);border-color:rgba(123,44,191,.6)}
+.st-key-hl_star button{background:rgba(42,120,214,.12);border-color:rgba(42,120,214,.55)}
+</style>
+"""
+# กลุ่มเด่นตามเอกสาร SOMMIT: (คีย์, หัวข้อ, คำอธิบาย, ตัวกรอง)
+HL_GROUPS = [
+    ("strong", "💪 หุ้นแข็งแกร่ง", "กล่อง 🟢✓ / 🔵✓ = ราคาเหนือ EMA 10, 50 และ 200 · เรียงตามคะแนนกฎ",
+     lambda t: t["box"].isin(["G", "B"])),
+    ("watch", "🌱 หุ้นน่าติดตาม (กำลังฟื้น)", "กล่อง 👀 เด้งในแนวโน้มยาวขาขึ้น / 🟢↩ ฟื้นตัว ใกล้ทดสอบ EMA200",
+     lambda t: t["box"].isin(["EYE", "RG"])),
+    ("purple", "◆ กรอบม่วง", "แข็งแรง + ทิศทาง V + รายเดือนขาขึ้น + MACD Higher High (ผลทดสอบย้อนหลังไม่สม่ำเสมอ)",
+     lambda t: t["purple"]),
+    ("star", "★ หุ้นน่าจับตา", "↩ เขียว + แท่งเทียนขาขึ้น หรือ ทิศทาง V (ไม่ใช่ 👀 และไม่ใช่ ✕ ที่มีแท่งขาขึ้น)",
+     lambda t: t["watch"]),
+]
+
+
+def _highlights(t: pd.DataFrame):
+    """แผงหุ้นเด่นด้านบนแท็บ: กดชื่อหุ้นเพื่อเปิดกราฟ"""
+    st.markdown(HL_CSS, unsafe_allow_html=True)
+    st.markdown("#### ⭐ หุ้นเด่นวันนี้ <span style='font-size:.8rem;color:gray;font-weight:400'>"
+                "กดชื่อหุ้นเพื่อเปิดกราฟราคา · ตัวเลข = คะแนนกฎ · ไม่ใช่คำแนะนำซื้อขาย</span>",
+                unsafe_allow_html=True)
+    ss = st.session_state
+    cols = st.columns(2)
+    for n, (key, title, desc, rule) in enumerate(HL_GROUPS):
+        g = t[rule(t)].sort_values(["score", "spec"], ascending=False)
+        with cols[n % 2].container(border=True):
+            st.markdown(f"**{title}** · {len(g)} ตัว")
+            st.caption(desc)
+            if g.empty:
+                st.caption("— ไม่มีวันนี้ —")
+                continue
+            with st.container(horizontal=True, key=f"hl_{key}", gap="small"):
+                for _, r in g.iterrows():
+                    lab = f"{r['symbol']} {r['score']:+d}" + (" 🟢" if r["verdict"] == "ซื้อ" else "")
+                    if st.button(lab, key=f"hlb_{key}_{r['symbol']}",
+                                 help=f"{BOX[r['box']][0]} {BOX[r['box']][1]} · {DIRS[r['dir']][0]} {DIRS[r['dir']][1]} · "
+                                      f"ผลอ่าน {r['verdict']} · Spectrum {r['spec']:+d} · % วันนี้ {r['chg1']:+.2%}"):
+                        ss["goto_sym"] = r["yahoo"]
+                        st.rerun()
+    st.caption("🟢 หลังชื่อ = ผลอ่าน \"ซื้อ\" · ผลทดสอบย้อนหลังแนะนำให้ใช้กลุ่มเหล่านี้เป็นตัวคัดกรองเบื้องต้น ไม่ใช่สัญญาณซื้อทันที")
+
+
 def render_signals_tab(set100: pd.DataFrame, clickable_table):
     ss = st.session_state
     syms = tuple(set100["yahoo"])
@@ -542,7 +592,8 @@ def render_signals_tab(set100: pd.DataFrame, clickable_table):
                   help="1W/1M เปลี่ยนเฉพาะกล่องสีในตาราง · คะแนนกฎและ Spectrum คำนวณจากแท่งรายวันเสมอ")
     sort = o2.selectbox("เรียงตาม", ["คำแนะนำการลงทุน (กล่องสี)", "สถานะทางเทคนิค (คะแนนกฎ มาก→น้อย)",
                                      "ทิศทาง (▲ ก่อน)", "Spectrum (มาก→น้อย)"], key="sig_sort")
-    flt = o3.selectbox("กรอง", ["ทั้งหมด", "บวกวันนี้", "ลบวันนี้", "◆ กรอบม่วง", "★ หุ้นน่าจับตา", "ซื้อ / ถือ"],
+    flt = o3.selectbox("กรอง", ["ทั้งหมด", "💪 หุ้นแข็งแกร่ง", "🌱 หุ้นน่าติดตาม (กำลังฟื้น)", "◆ กรอบม่วง",
+                                "★ หุ้นน่าจับตา", "ซื้อ / ถือ", "บวกวันนี้", "ลบวันนี้"],
                        key="sig_flt")
     t = signal_table(syms, tf)
     if t.empty:
@@ -564,6 +615,8 @@ def render_signals_tab(set100: pd.DataFrame, clickable_table):
     m[5].metric("◆ กรอบม่วง", int(t["purple"].sum()))
     m[6].metric("★ น่าจับตา", int(t["watch"].sum()))
 
+    _highlights(t)
+
     tab_a, tab_b, tab_c = st.tabs(["📋 ตารางสัญญาณรายตัว", "🌈 Market Lens: Signal Spectrum", "🧪 ทดสอบย้อนหลัง & วิธีคิด"])
     with tab_a:
         v = t.copy()
@@ -577,6 +630,10 @@ def render_signals_tab(set100: pd.DataFrame, clickable_table):
             v = v[v["watch"]]
         elif flt == "ซื้อ / ถือ":
             v = v[v["verdict"].isin(["ซื้อ", "ถือ"])]
+        elif flt.startswith("💪"):
+            v = v[v["box"].isin(["G", "B"])]
+        elif flt.startswith("🌱"):
+            v = v[v["box"].isin(["EYE", "RG"])]
         if sort.startswith("คำแนะนำ"):
             v = v.assign(_k=v["box_tf"].map(lambda b: BOX[b][2])).sort_values(["_k", "symbol"])
         elif sort.startswith("สถานะ"):
