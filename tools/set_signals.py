@@ -556,10 +556,10 @@ HL_GROUPS = [
 
 
 def _highlights(t: pd.DataFrame):
-    """แผงหุ้นเด่นด้านบนแท็บ: กดชื่อหุ้นเพื่อเปิดกราฟ"""
+    """แผงหุ้นเด่นด้านบนแท็บ: กดชื่อหุ้นเพื่อดูเหตุผลและกราฟในช่องเหตุผลรายตัว"""
     st.markdown(HL_CSS, unsafe_allow_html=True)
     st.markdown("#### ⭐ หุ้นเด่นวันนี้ <span style='font-size:.8rem;color:gray;font-weight:400'>"
-                "กดชื่อหุ้นเพื่อเปิดกราฟราคา · ตัวเลข = คะแนนกฎ · ไม่ใช่คำแนะนำซื้อขาย</span>",
+                "กดชื่อหุ้นเพื่อดูเหตุผลและกราฟด้านล่าง · ตัวเลข = คะแนนกฎ · ไม่ใช่คำแนะนำซื้อขาย</span>",
                 unsafe_allow_html=True)
     ss = st.session_state
     cols = st.columns(2)
@@ -577,13 +577,38 @@ def _highlights(t: pd.DataFrame):
                     if st.button(lab, key=f"hlb_{key}_{r['symbol']}",
                                  help=f"{BOX[r['box']][0]} {BOX[r['box']][1]} · {DIRS[r['dir']][0]} {DIRS[r['dir']][1]} · "
                                       f"ผลอ่าน {r['verdict']} · Spectrum {r['spec']:+d} · % วันนี้ {r['chg1']:+.2%}"):
-                        ss["goto_sym"] = r["yahoo"]
+                        ss["sig_pick"] = r["yahoo"]
                         st.rerun()
     st.caption("🟢 หลังชื่อ = ผลอ่าน \"ซื้อ\" · ผลทดสอบย้อนหลังแนะนำให้ใช้กลุ่มเหล่านี้เป็นตัวคัดกรองเบื้องต้น ไม่ใช่สัญญาณซื้อทันที")
 
 
-def render_signals_tab(set100: pd.DataFrame, clickable_table):
+def _scroll_to(anchor_id: str):
+    """เลื่อนหน้าไปที่ anchor (ใช้หลังคลิกหุ้นในตาราง/Spectrum ที่อยู่ด้านล่าง)"""
+    import streamlit.components.v1 as components
+    components.html(f"<script>setTimeout(()=>{{const e=window.parent.document.getElementById('{anchor_id}');"
+                    f"if(e)e.scrollIntoView({{behavior:'smooth',block:'start'}})}},300)</script>", height=0)
+
+
+def _picker_table(df: pd.DataFrame, key: str, **kw):
+    """ตารางที่คลิกแถวแล้วเลือกหุ้นนั้นในช่องเหตุผลรายตัว (อยู่ในแท็บเดิม ไม่ย้ายไปแท็บกราฟ)"""
     ss = st.session_state
+    nonce = ss.get("sig_nonce", 0)
+    cfg = dict(kw.pop("column_config", {}) or {})
+    cfg["yahoo"] = None
+    ev = st.dataframe(df, key=f"{key}_{nonce}", on_select="rerun", selection_mode="single-row",
+                      hide_index=True, column_config=cfg, **kw)
+    rows = ev.selection.rows if ev is not None else []
+    if rows:
+        ss["sig_pick"] = df.iloc[rows[0]]["yahoo"]
+        ss["sig_scroll"] = True
+        ss["sig_nonce"] = nonce + 1
+        st.rerun()
+
+
+def render_signals_tab(set100: pd.DataFrame, clickable_table=None):
+    ss = st.session_state
+    if "sig_pick" in ss:  # หุ้นที่คลิกมาจากแผงหุ้นเด่น/ตาราง/Spectrum -> ตั้งค่าก่อนสร้าง selectbox
+        ss["sig_detail"] = ss.pop("sig_pick")
     syms = tuple(set100["yahoo"])
     star = dict(zip(set100["yahoo"], set100["set50"])) if "set50" in set100 else {}
     o1, o2, o3 = st.columns([1.2, 1.6, 1.4])
@@ -606,7 +631,7 @@ def render_signals_tab(set100: pd.DataFrame, clickable_table):
         t = t[~t["stale"]]
     asof = t["date"].max()
     st.caption(f"ข้อมูลถึง {asof:%d %b %Y} · {len(t)} หุ้น · คำนวณจาก Yahoo Finance (ราคาจริง ไม่ปรับปันผล เหมือน set.or.th) · "
-               "คลิกแถวในตารางหรือช่องใน Spectrum เพื่อเปิดกราฟราคา")
+               "คลิกชื่อหุ้น แถวในตาราง หรือช่องใน Spectrum เพื่อดูเหตุผลและกราฟในช่อง 🔍 เหตุผลรายตัว")
 
     vc = t["verdict"].value_counts()
     m = st.columns(7)
@@ -616,6 +641,25 @@ def render_signals_tab(set100: pd.DataFrame, clickable_table):
     m[6].metric("★ น่าจับตา", int(t["watch"].sum()))
 
     _highlights(t)
+
+    # ----- เหตุผลรายตัว + กราฟ (ต่อจากหุ้นเด่นวันนี้) -----
+    st.markdown("<div id='sig-detail'></div>", unsafe_allow_html=True)
+    st.markdown("#### 🔍 เหตุผลรายตัว")
+    opts = sorted(t["yahoo"])
+    if ss.get("sig_detail") not in opts:
+        hl = t[t["box"].isin(["G", "B"])].sort_values(["score", "spec"], ascending=False)
+        ss["sig_detail"] = hl["yahoo"].iloc[0] if len(hl) else opts[0]
+    d1, d2 = st.columns([2, 1])
+    sym = d1.selectbox("เลือกหุ้น (หรือคลิกชื่อหุ้นจากแผงด้านบน / ตาราง / Spectrum)", opts, key="sig_detail",
+                       format_func=lambda s: s.replace(".BK", ""))
+    d2.markdown("<div style='height:1.8rem'></div>", unsafe_allow_html=True)
+    if d2.button("📈 เปิดในแท็บกราฟราคา (เต็มจอ)", key="sig_open_chart"):
+        ss["goto_sym"] = sym
+        st.rerun()
+    with st.container(border=True):
+        _detail(t, load_prices(syms), sym)
+    if ss.pop("sig_scroll", False):
+        _scroll_to("sig-detail")
 
     tab_a, tab_b, tab_c = st.tabs(["📋 ตารางสัญญาณรายตัว", "🌈 Market Lens: Signal Spectrum", "🧪 ทดสอบย้อนหลัง & วิธีคิด"])
     with tab_a:
@@ -659,20 +703,14 @@ def render_signals_tab(set100: pd.DataFrame, clickable_table):
             "พิเศษ": (v["purple"].map(lambda x: "◆ " if x else "") + v["white"].map(lambda x: "▣ " if x else "")
                       + v["watch"].map(lambda x: "★" if x else "")),
         })
-        clickable_table(st, tbl, "sig_tbl", use_container_width=True, height=560, column_config={
+        _picker_table(tbl, "sig_tbl", use_container_width=True, height=560, column_config={
             "ราคา": st.column_config.NumberColumn(format="%.2f"),
             "% วันนี้": st.column_config.NumberColumn(format="%+.2f%%"),
             "คะแนน": st.column_config.NumberColumn(format="%+d"),
             "Spectrum": st.column_config.ProgressColumn(min_value=-100, max_value=100, format="%+d"),
         })
-        st.caption("★ หลังชื่อ = SET50 · ⚠️ = ราคาห่าง EMA200 ไม่ถึง 2% · พิเศษ: ◆ กรอบม่วง · ▣ Spectrum ≥ +75 · ★ หุ้นน่าจับตา")
-
-        st.markdown("#### 🔍 เหตุผลรายตัว")
-        opts = list(v["yahoo"]) or list(t["yahoo"])
-        if ss.get("sig_detail") not in opts:
-            ss["sig_detail"] = opts[0]
-        sym = st.selectbox("เลือกหุ้น", opts, key="sig_detail", format_func=lambda s: s.replace(".BK", ""))
-        _detail(t, load_prices(syms), sym)
+        st.caption("คลิกแถวเพื่อดูเหตุผลและกราฟในช่อง 🔍 เหตุผลรายตัวด้านบน · ★ หลังชื่อ = SET50 · "
+                   "⚠️ = ราคาห่าง EMA200 ไม่ถึง 2% · พิเศษ: ◆ กรอบม่วง · ▣ Spectrum ≥ +75 · ★ หุ้นน่าจับตา")
 
     with tab_b:
         st.caption("แต่ละแถว = กลุ่มอุตสาหกรรม (Yahoo) เรียงจากคะแนนเฉลี่ยถ่วง market cap สูงสุด (ตัวเลขท้ายแถว) · "
@@ -684,7 +722,8 @@ def render_signals_tab(set100: pd.DataFrame, clickable_table):
         pts = ev.selection.points if ev is not None and ev.selection else []
         if pts and pts[0].get("customdata"):
             cdv = pts[0]["customdata"]
-            ss["goto_sym"] = cdv[0] if isinstance(cdv, (list, tuple)) else cdv
+            ss["sig_pick"] = cdv[0] if isinstance(cdv, (list, tuple)) else cdv
+            ss["sig_scroll"] = True
             ss["tbl_nonce"] = nonce + 1
             st.rerun()
         top = t.sort_values("spec", ascending=False)
