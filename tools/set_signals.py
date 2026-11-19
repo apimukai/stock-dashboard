@@ -815,16 +815,14 @@ def _detail(t: pd.DataFrame, px: dict, sym: str, asof=None):
                f"{10 if r['bull'] else (-10 if r['bear'] else 0):+d} · ทิศทาง {DIRS[r['dir']][3]:+d} · รายเดือน "
                f"{MONTHLY[r['monthly']][0]} {MONTHLY[r['monthly']][1]:+d} · MACD {15 if r['macd_hh'] == 'strong' else 0:+d} · "
                f"ช่อง/ทุบ {(10 if pd.notna(r['chan_days']) else 0) - (10 if r['smash'] else 0):+d} · RSI {r['rsi']:.0f}")
-    df = px[sym].iloc[-180:]
-    f = go.Figure(go.Candlestick(x=df.index, open=df["Open"], high=df["High"], low=df["Low"], close=df["Close"],
-                                 name=r["symbol"], showlegend=False))
-    full = px[sym]["Close"]
-    for n, colr in [(10, "#f28e2b"), (50, "#2a78d6"), (200, "#7b2cbf")]:
-        e = full.ewm(span=n, adjust=False).mean().iloc[-180:]
-        f.add_trace(go.Scatter(x=e.index, y=e, name=f"EMA{n}", line=dict(color=colr, width=1.3)))
-    f.update_layout(height=380, margin=dict(l=10, r=10, t=10, b=10), xaxis_rangeslider_visible=False,
-                    legend=dict(orientation="h", y=1.05))
-    st.plotly_chart(f, use_container_width=True)
+    # กราฟสไตล์ TradingView (Lightweight Charts) + EMA 10/50/200 + ปักวันที่เกิดสัญญาณ
+    # ส่งข้อมูล 400 แท่งเพื่อให้เส้น EMA ต่อเนื่อง แล้วให้กราฟเปิดที่ 180 แท่งล่าสุด (ซูมออกดูย้อนหลังได้)
+    from tv_chart import lw_chart, signal_events, DEFAULT_MARKERS
+    full = px[sym].iloc[-400:]
+    ev = signal_events(sym, start=full.index[0], end=full.index[-1])
+    lw_chart(full, ma=(10, 50, 200), ma_kind="EMA", events=ev, keys=DEFAULT_MARKERS, height=420, visible_bars=180)
+    st.caption("ซูมด้วยล้อเมาส์ · ลากเพื่อเลื่อน · 💪 เข้ากลุ่มแข็งแกร่ง · ซื้อ/ขาย = ผลอ่านเปลี่ยน · "
+               "A/C = สูตรที่ทดสอบแล้วชนะตลาดใน 20 วัน")
 
 
 HL_CSS = """
