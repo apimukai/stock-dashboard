@@ -124,7 +124,7 @@ date,yahoo,symbol,groups,verdict,score,spec,box,dir,mom,mom_rank,price
 2026-11-18,JKHY,JKHY,strong,ถือ,2,50,G,UP,-0.0402,381.0,174.58
 2026-11-18,STZ,STZ,strong,ถือ,2,50,G,UP,0.0351,327.0,143.62
 2026-11-18,CRWD,CRWD,strong,ถือ,2,45,G,DN,0.7167,38.0,237.03
-2026-11-18,OKTA,OKTA,mom|strong,ถือ,2,45,G,DN,1.3932,11.0,195.61
+2026-11-18,OKTA,OKTA,pass|mom|strong,ถือ,2,45,G,DN,1.3932,11.0,195.61
 2026-11-18,CMCSA,CMCSA,watch,ถือ,2,30,RG,UP,-0.0766,405.0,25.24
 2026-11-18,TJX,TJX,watch|star,ถือ,2,20,RG,SW,0.0219,338.0,140.3
 2026-11-18,GPC,GPC,watch,รอ,1,30,EYE,SW,0.0112,350.0,123.64
@@ -136,9 +136,9 @@ date,yahoo,symbol,groups,verdict,score,spec,box,dir,mom,mom_rank,price
 2026-11-18,PANW,PANW,watch,รอ,0,10,EYE,DN,0.6771,40.0,339.92
 2026-11-18,IVZ,IVZ,watch,รอ,0,5,EYE,SW,0.3117,134.0,28.65
 2026-11-18,TMUS,TMUS,star,ไม่ซื้อ,-1,-5,X,V,-0.2537,472.0,164.02
-2026-11-18,AMD,AMD,mom|watch,ไม่ซื้อ,-1,-15,EYE,DN,1.2233,14.0,530.14
+2026-11-18,AMD,AMD,pass|mom|watch,ไม่ซื้อ,-1,-15,EYE,DN,1.2233,14.0,530.14
 2026-11-18,ILMN,ILMN,mom,ไม่ซื้อ,-1,-22,X,LA,1.2313,13.0,210.01
-2026-11-18,FTNT,FTNT,mom,ไม่ซื้อ,-1,-25,-,DN,1.086,18.0,131.81
+2026-11-18,FTNT,FTNT,pass|mom,ไม่ซื้อ,-1,-25,-,DN,1.086,18.0,131.81
 2026-11-18,MOS,MOS,star,ไม่ซื้อ,-2,-45,X,V,-0.2449,470.0,19.93
 2026-11-18,T,T,star,ไม่ซื้อ,-2,-45,X,V,-0.0366,380.0,21.95
 2026-11-18,STX,STX,mom,ไม่ซื้อ,-2,-60,X,DN,1.5982,8.0,515.9
