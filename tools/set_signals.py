@@ -340,10 +340,11 @@ def group_flags(a, i) -> dict:
     strong = box in ("G", "B")
     return {"strong": strong, "watch": box in ("EYE", "RG"),
             "purple": strong and d == "V" and monthly_shape(a, i) == "UP" and macd_hh(a, i) == "strong",
-            "star": (box == "RG" and bool(bull)) or (d == "V" and box != "EYE" and not (box == "X" and bull))}
+            "star": (box == "RG" and bool(bull)) or (d == "V" and box != "EYE" and not (box == "X" and bull)),
+            "x": box == "X"}
 
 
-GKEYS = ["mom", "strong", "watch", "purple", "star"]
+GKEYS = ["pass", "mom", "strong", "watch", "purple", "star"]
 
 
 def streak_table(h: pd.DataFrame) -> tuple:
@@ -383,6 +384,7 @@ def membership_history(syms: tuple, market: str, asof=None, n: int = 40) -> pd.D
     keep = sorted(keep[keep >= keep.max() * 0.5].index)[-n:]  # วันทำการของตลาด (ตัดวันของหุ้นที่ข้อมูลหาย)
     h = h[h["date"].isin(keep)].copy()
     h["mom"] = h.groupby("date")["mom_v"].rank(ascending=False, method="first") <= 20
+    h["pass"] = h["mom"] & ~h["x"].astype(bool)
     return h
 
 
@@ -451,7 +453,7 @@ def snapshot_rows(t: pd.DataFrame) -> pd.DataFrame:
     """หุ้นที่ติดกลุ่มเด่นอย่างน้อย 1 กลุ่ม หรือได้ผลอ่าน "ซื้อ" ณ วันทำการล่าสุดของตลาด"""
     t = t[~t["stale"]]
     t = t[t["date"] == t["date"].max()]
-    flags = pd.DataFrame({k: rule(t).fillna(False).astype(bool) for k, _, _, rule in [MOM_GROUP] + HL_GROUPS})
+    flags = pd.DataFrame({k: rule(t).fillna(False).astype(bool) for k, _, _, rule in ALL_GROUPS})
     grp = flags.apply(lambda r: "|".join(k for k in flags.columns if r[k]), axis=1)
     keep = (grp != "") | (t["verdict"] == "ซื้อ")
     out = t[keep].assign(groups=grp[keep])[LOG_COLS].copy()
@@ -487,11 +489,146 @@ def _read_log(files: tuple) -> pd.DataFrame:
     return pd.concat(parts, ignore_index=True) if parts else pd.DataFrame(columns=LOG_COLS)
 
 
+# ======================= ผลคำนวณล่วงหน้า (files/signal_cache) ให้หน้าเว็บเปิดได้ทันที =======================
+CACHE_DIR = os.path.join(FILES, "signal_cache")
+LIST_COLS = ["bull", "bear", "sup", "warn"]
+CACHE_MAX_AGE_DAYS = 4  # เก่ากว่านี้ (เช่น Actions ล้มหลายวัน) จะคำนวณสดแทน
+
+
+def save_cache(t: pd.DataFrame, h: pd.DataFrame, market: str):
+    os.makedirs(CACHE_DIR, exist_ok=True)
+    t2 = t.drop(columns=["ema"], errors="ignore").copy()
+    for c in LIST_COLS:
+        t2[c] = t2[c].map(lambda x: "|".join(x) if isinstance(x, (list, tuple)) else "")
+    num = t2.select_dtypes("float").columns
+    t2[num] = t2[num].round(4)
+    t2.to_csv(os.path.join(CACHE_DIR, f"{LOG_KEY[market]}_table.csv"), index=False, encoding="utf-8")
+    # ประวัติแบบย่อ: เก็บเฉพาะแถวที่ติดอย่างน้อย 1 กลุ่ม (คอลัมน์ groups = "pass|mom|...") + รายการวันที่ทั้งหมด
+    flags = h[GKEYS].astype(bool)
+    grp = flags.apply(lambda r: "|".join(k for k in GKEYS if r[k]), axis=1)
+    hh = pd.DataFrame({"date": pd.to_datetime(h["date"]).dt.strftime("%Y-%m-%d"), "yahoo": h["yahoo"], "groups": grp})
+    hh = hh[hh["groups"] != ""]
+    days = pd.DataFrame({"date": sorted(pd.to_datetime(h["date"]).dt.strftime("%Y-%m-%d").unique()), "yahoo": "__day__",
+                         "groups": ""})
+    pd.concat([days, hh]).to_csv(os.path.join(CACHE_DIR, f"{LOG_KEY[market]}_hist.csv"), index=False, encoding="utf-8")
+
+
+def _cache_files(market: str) -> tuple:
+    ps = [os.path.join(CACHE_DIR, f"{LOG_KEY[market]}_{k}.csv") for k in ("table", "hist")]
+    return tuple((p, os.path.getmtime(p)) for p in ps if os.path.exists(p))
+
+
+@st.cache_data(show_spinner=False)
+def _read_cache(files: tuple):
+    if len(files) < 2:
+        return None, None
+    t = pd.read_csv(files[0][0], keep_default_na=True)
+    for c in LIST_COLS:
+        t[c] = t[c].fillna("").map(lambda s: [x for x in str(s).split("|") if x])
+    t["date"] = pd.to_datetime(t["date"])
+    t["box"] = t["box"].fillna("-")
+    t["box_tf"] = t["box_tf"].fillna("-")
+    t["macd_hh"] = t["macd_hh"].where(t["macd_hh"].notna(), None)
+    for c in ("purple", "white", "watch", "near200", "rsi_star", "mv", "smash", "stale"):
+        t[c] = t[c].astype(str).str.lower().eq("true")
+    hh = pd.read_csv(files[1][0])
+    days = pd.to_datetime(hh.loc[hh["yahoo"] == "__day__", "date"])
+    hh = hh[hh["yahoo"] != "__day__"]
+    # กางกลับเป็นตารางเต็ม (ทุกหุ้น × ทุกวัน) เหมือนผลของ membership_history
+    grid = pd.MultiIndex.from_product([days, t["yahoo"].unique()], names=["date", "yahoo"]).to_frame(index=False)
+    hh = hh.assign(date=pd.to_datetime(hh["date"]))
+    h = grid.merge(hh, on=["date", "yahoo"], how="left")
+    g = h["groups"].fillna("")
+    for k in GKEYS:
+        h[k] = g.str.split("|").map(lambda xs, k=k: k in xs)
+    return t, h.drop(columns="groups")
+
+
+def load_cache(market: str):
+    """(ตาราง, ประวัติสมาชิกกลุ่ม) ที่ GitHub Actions คำนวณไว้ · คืน (None, None) ถ้าไม่มีหรือเก่าเกินไป"""
+    t, h = _read_cache(_cache_files(market))
+    if t is None or (pd.Timestamp.today().normalize() - t["date"].max()).days > CACHE_MAX_AGE_DAYS:
+        return None, None
+    return t, h
+
+
 def load_log(market: str) -> pd.DataFrame:
     return _read_log(_log_files(market))  # คีย์แคชผูกกับเวลาแก้ไขไฟล์ จึงอ่านใหม่เมื่อมีบันทึกเพิ่ม
 
 
-GROUP_ICON = {"mom": "🚀 โมเมนตัม", "strong": "💪 แข็งแกร่ง", "watch": "🌱 น่าติดตาม", "purple": "◆ กรอบม่วง",
+HORIZONS = [5, 20, 60]
+
+
+@st.cache_data(ttl=3600, show_spinner="กำลังวัดผลจริงจากบันทึก ...")
+def log_results(files: tuple, market: str, syms: tuple) -> tuple:
+    """ผลจริงหลังติดสัญญาณ: ทุกวันที่มีบันทึก × ทุกกลุ่ม -> ผลตอบแทน H วันทำการถัดไป ลบค่าเฉลี่ยหุ้นทุกตัวในตลาด
+    คืน (ตารางสรุป, จำนวนวันที่บันทึก, จำนวนวันที่วัดผลได้แล้วของแต่ละช่วง)"""
+    log = _read_log(files)
+    if log.empty:
+        return pd.DataFrame(), 0, {}
+    px = load_prices(syms, period_of(market))
+    adj = pd.DataFrame({s: (df["Adj Close"] if "Adj Close" in df else df["Close"]) for s, df in px.items()}).sort_index()
+    days = sorted(log["date"].unique())
+    rows, ready = [], {H: 0 for H in HORIZONS}
+    prev = {}
+    for d in days:
+        ts = pd.Timestamp(d)
+        if ts not in adj.index:
+            continue
+        i = adj.index.get_loc(ts)
+        L = log[log["date"] == d]
+        cur = {k: set(L.loc[L["groups"].fillna("").str.contains(k), "yahoo"]) for k in GKEYS}
+        for H in HORIZONS:
+            if i + H >= len(adj):
+                continue
+            ready[H] += 1
+            fwd = adj.iloc[i + H] / adj.iloc[i] - 1
+            ex = fwd - fwd.mean()
+            for k in GKEYS:
+                for y in cur[k]:
+                    if pd.notna(ex.get(y)):
+                        rows.append((d, k, y, H, ex[y], bool(prev) and y not in prev.get(k, set())))
+        prev = cur
+    if not rows:
+        return pd.DataFrame(), len(days), ready
+    r = pd.DataFrame(rows, columns=["date", "group", "yahoo", "H", "ex", "new"])
+    out = []
+    for k in GKEYS:
+        for lab, m in [("ทุกตัวในกลุ่ม", r["group"] == k), ("เพิ่งเข้ากลุ่ม", (r["group"] == k) & r["new"])]:
+            row = {"กลุ่ม": GROUP_ICON.get(k, k), "นับแบบ": lab}
+            for H in HORIZONS:
+                x = r.loc[m & (r["H"] == H), "ex"]
+                row[f"{H} วัน: ชนะตลาด"] = x.mean() * 100 if len(x) else np.nan
+                row[f"{H} วัน: % ชนะ"] = (x > 0).mean() * 100 if len(x) else np.nan
+                row[f"{H} วัน: ครั้ง"] = len(x)
+            out.append(row)
+    return pd.DataFrame(out), len(days), ready
+
+
+def _render_log_results(market: str, syms: tuple):
+    files = _log_files(market)
+    res, n_days, ready = log_results(files, market, syms)
+    st.markdown("**📒 ผลจริงหลังติดสัญญาณ (จากบันทึกรายวัน ไม่ใช่ backtest)**")
+    st.caption("ทุกวันที่มีบันทึก: ผลตอบแทนของหุ้นในแต่ละกลุ่ม 5 / 20 / 60 วันทำการถัดไป ลบค่าเฉลี่ยหุ้นทุกตัวในตลาดช่วงเดียวกัน · "
+               "ใช้รายชื่อที่บันทึกไว้จริงในวันนั้น จึงไม่มีปัญหารายชื่อหุ้นปัจจุบันแบบ backtest · "
+               "\"เพิ่งเข้ากลุ่ม\" = ไม่อยู่ในกลุ่มนั้นในวันที่บันทึกก่อนหน้า")
+    c = st.columns(4)
+    c[0].metric("วันที่มีบันทึก", n_days)
+    for col, H in zip(c[1:], HORIZONS):
+        col.metric(f"วันที่วัดผล {H} วันได้แล้ว", ready.get(H, 0))
+    if res.empty:
+        st.info("ยังวัดผลไม่ได้: ต้องมีราคาหลังวันที่บันทึกอย่างน้อย 5 วันทำการ · บันทึกเริ่มสะสมทุกเช้าวันทำการ "
+                "แล้วตารางนี้จะเติมเองอัตโนมัติ (ผลที่พอเชื่อได้ควรมีบันทึกอย่างน้อย 2–3 เดือน)")
+        return
+    cfg = {}
+    for H in HORIZONS:
+        cfg[f"{H} วัน: ชนะตลาด"] = st.column_config.NumberColumn(format="%+.2f%%")
+        cfg[f"{H} วัน: % ชนะ"] = st.column_config.NumberColumn(format="%.0f%%")
+    st.dataframe(res, hide_index=True, use_container_width=True, column_config=cfg)
+    st.caption("ช่วงที่บันทึกยังสั้น ตัวเลขจะแกว่งมากและเชื่อไม่ได้ · ช่วงถือซ้อนทับกันระหว่างวัน · ยังไม่หักค่าซื้อขาย · ไม่ใช่คำแนะนำการลงทุน")
+
+
+GROUP_ICON = {"pass": "✅ ผ่านเกณฑ์", "mom": "🚀 โมเมนตัม", "strong": "💪 แข็งแกร่ง", "watch": "🌱 น่าติดตาม", "purple": "◆ กรอบม่วง",
               "star": "★ น่าจับตา"}
 
 
@@ -699,6 +836,7 @@ HL_CSS = """
 [class*="st-key-hl_purple_"] button{background:rgba(123,44,191,.12);border-color:rgba(123,44,191,.6)}
 [class*="st-key-hl_star_"] button{background:rgba(42,120,214,.12);border-color:rgba(42,120,214,.55)}
 [class*="st-key-hl_mom_"] button{background:rgba(230,85,13,.12);border-color:rgba(230,85,13,.6)}
+[class*="st-key-hl_pass_"] button{background:rgba(27,120,55,.22);border-color:rgba(27,120,55,.9);font-weight:600}
 </style>
 """
 # กลุ่มเด่นตามเอกสาร SOMMIT: (คีย์, หัวข้อ, คำอธิบาย, ตัวกรอง)
@@ -717,10 +855,15 @@ HL_GROUPS = [
 MOM_GROUP = ("mom", "🚀 โมเมนตัมสูงสุด 12 เดือน (Top 20)",
              "ผลตอบแทนรวมปันผล 12 เดือน ไม่นับเดือนล่าสุด · ผล backtest ดีกว่าสัญญาณ SOMMIT ทั้งหุ้นไทยและ S&P 500",
              lambda t: t["mom_rank"] <= 20)
+# สูตรที่ backtest ได้ Sharpe ดีที่สุดทั้งไทยและสหรัฐ: เลือกด้วยโมเมนตัม แล้วใช้กฎ SOMMIT ตัดหุ้นที่ราคาหลุดเส้น EMA (กล่อง ✕) ออก
+PASS_GROUP = ("pass", "✅ ผ่านเกณฑ์: โมเมนตัม Top 20 ที่ไม่อยู่ในกล่อง ✕",
+              "สูตรที่ทดสอบย้อนหลังได้ Sharpe ดีที่สุด (SET100 1.07 เมื่อรวมตัวกรองตลาด · S&P 500 1.12) · ตัวเลข = ผลตอบแทน 12 เดือน",
+              lambda t: (t["mom_rank"] <= 20) & (t["box"] != "X"))
+ALL_GROUPS = [PASS_GROUP, MOM_GROUP] + HL_GROUPS
 HL_LIMIT = 40  # จำนวนชิปสูงสุดต่อกล่อง (S&P 500 มีหุ้นเข้ากลุ่มได้เป็นร้อยตัว)
 
 
-GROUP_SHORT = {"mom": "🚀", "strong": "💪", "watch": "🌱", "purple": "◆", "star": "★"}
+GROUP_SHORT = {"pass": "✅", "mom": "🚀", "strong": "💪", "watch": "🌱", "purple": "◆", "star": "★"}
 
 
 def _days(n, cap):
@@ -742,7 +885,7 @@ def _highlights(t: pd.DataFrame, p: str, groups, members: dict = None, title: st
     cols = st.columns(2)
     for n, (key, title, desc, rule) in enumerate(groups):
         g = t[rule(t)]
-        g = g.sort_values("mom_rank") if key == "mom" else g.sort_values(["score", "spec"], ascending=False)
+        g = g.sort_values("mom_rank") if key in ("mom", "pass") else g.sort_values(["score", "spec"], ascending=False)
         with cols[n % 2].container(border=True):
             st.markdown(f"**{title}** · {len(g)} ตัว")
             st.caption(desc)
@@ -758,7 +901,7 @@ def _highlights(t: pd.DataFrame, p: str, groups, members: dict = None, title: st
                     n = r.get(sk, 0) or 0
                     tag = ("🆕 " if n == 1 else "")
                     days = f" · {int(n)}{'+' if n >= cap else ''}ว" if n >= 1 else ""
-                    if key == "mom":
+                    if key in ("mom", "pass"):
                         lab = f"{tag}{r['symbol']} {r['mom']:+.0%}{days}"
                     else:
                         lab = f"{tag}{r['symbol']} {r['score']:+d}{days}" + (" 🟢" if r["verdict"] == "ซื้อ" else "")
@@ -784,7 +927,7 @@ def _streak_panel(h: pd.DataFrame, sym: str, cap: int):
     if x.empty:
         return
     dates = list(x["date"])
-    names = {"mom": "🚀 โมเมนตัม Top 20", "strong": "💪 แข็งแกร่ง", "watch": "🌱 น่าติดตาม", "purple": "◆ กรอบม่วง",
+    names = {"pass": "✅ ผ่านเกณฑ์", "mom": "🚀 โมเมนตัม Top 20", "strong": "💪 แข็งแกร่ง", "watch": "🌱 น่าติดตาม", "purple": "◆ กรอบม่วง",
              "star": "★ น่าจับตา"}
     lines = []
     for k in GKEYS:
@@ -830,7 +973,7 @@ def _picker_table(df: pd.DataFrame, key: str, p: str, **kw):
         st.rerun()
 
 
-FILTERS = ["ทั้งหมด", "🆕 เพิ่งเข้ากลุ่มเด่น (ไม่เกิน 3 วัน)", "🚀 Top 20 โมเมนตัม", "💪 หุ้นแข็งแกร่ง", "🌱 หุ้นน่าติดตาม (กำลังฟื้น)", "◆ กรอบม่วง",
+FILTERS = ["ทั้งหมด", "✅ ผ่านเกณฑ์ (โมเมนตัม + ไม่ ✕)", "🆕 เพิ่งเข้ากลุ่มเด่น (ไม่เกิน 3 วัน)", "🚀 Top 20 โมเมนตัม", "💪 หุ้นแข็งแกร่ง", "🌱 หุ้นน่าติดตาม (กำลังฟื้น)", "◆ กรอบม่วง",
            "★ หุ้นน่าจับตา", "ซื้อ / ถือ", "บวกวันนี้", "ลบวันนี้"]
 SORTS = ["คำแนะนำการลงทุน (กล่องสี)", "สถานะทางเทคนิค (คะแนนกฎ มาก→น้อย)", "ทิศทาง (▲ ก่อน)", "Spectrum (มาก→น้อย)",
          "โมเมนตัม 12 เดือน (มาก→น้อย)"]
@@ -885,8 +1028,19 @@ def render_signals_tab(universe: pd.DataFrame, clickable_table=None, market: str
                   help="1W/1M เปลี่ยนเฉพาะกล่องสีในตาราง · คะแนนกฎและ Spectrum คำนวณจากแท่งรายวันเสมอ")
     sort = o2.selectbox("เรียงตาม", SORTS, key=f"{p}_sort", index=4 if market == "US" else 0)
     flt = o3.selectbox("กรอง", FILTERS, key=f"{p}_flt")
-    with st.spinner("กำลังคำนวณสัญญาณ ..."):
-        t = signal_table(syms, tf, market, asof)
+    # ใช้ผลที่ GitHub Actions คำนวณไว้ทุกเช้า (เปิดได้ทันที) เมื่อดูวันล่าสุดด้วยแท่งรายวัน · ปิดสวิตช์ = คำนวณสดจากราคาล่าสุด
+    h_cached, from_cache = None, False
+    if asof is None and tf == "D":
+        fast = st.toggle("⚡ ใช้ผลที่คำนวณไว้ล่วงหน้า (ราคาปิดล่าสุด · เปิดเร็ว)", value=True, key=f"{p}_fast",
+                         help="ปิดสวิตช์เพื่อคำนวณสดจากราคาล่าสุดของ Yahoo (รวมราคาระหว่างวัน) · ใช้เวลานานกว่า")
+        if fast:
+            tc, h_cached = load_cache(market)
+            if tc is not None:
+                t, from_cache = tc, True
+    if not from_cache:
+        h_cached = None
+        with st.spinner("กำลังคำนวณสัญญาณ ..."):
+            t = signal_table(syms, tf, market, asof)
     if t.empty:
         st.warning("ไม่มีข้อมูลราคาพอสำหรับวันที่เลือก")
         return
@@ -910,7 +1064,8 @@ def render_signals_tab(universe: pd.DataFrame, clickable_table=None, market: str
                 if k:
                     members.setdefault(k, set()).add(y)
     if asof is None:
-        st.caption(f"ข้อมูลถึง {day:%d %b %Y} · {len(t)} หุ้น · คำนวณจาก Yahoo Finance ({src}) · "
+        how = "⚡ ผลคำนวณล่วงหน้าจากราคาปิด (อัปเดตทุกเช้า 05:30 น.)" if from_cache else f"คำนวณสดจาก Yahoo Finance ({src})"
+        st.caption(f"ข้อมูลถึง {day:%d %b %Y} · {len(t)} หุ้น · {how} · "
                    "คลิกชื่อหุ้น แถวในตาราง หรือช่องใน Spectrum เพื่อดูเหตุผลและกราฟในช่อง 🔍 เหตุผลรายตัว")
     elif members is not None:
         st.success(f"📒 **ย้อนดูวันที่ {day:%d %b %Y}** · แผงหุ้นเด่นแสดงจาก **บันทึกจริงของวันนั้น** · "
@@ -931,8 +1086,11 @@ def render_signals_tab(universe: pd.DataFrame, clickable_table=None, market: str
 
     # ----- ความต่อเนื่อง: ติดกลุ่มมากี่วัน / เพิ่งเข้า / หลุด (คำนวณย้อนหลัง n วันทำการ) -----
     cap = 60 if market == "TH" else 40
-    with st.spinner("กำลังนับวันที่หุ้นติดกลุ่มต่อเนื่อง ..."):
-        h = membership_history(syms, market, asof, cap)
+    if h_cached is not None:
+        h = h_cached
+    else:
+        with st.spinner("กำลังนับวันที่หุ้นติดกลุ่มต่อเนื่อง ..."):
+            h = membership_history(syms, market, asof, cap)
     dropped = None
     if len(h):
         stk, dropped, _ = streak_table(h)
@@ -943,7 +1101,7 @@ def render_signals_tab(universe: pd.DataFrame, clickable_table=None, market: str
         for k in GKEYS:
             t[f"stk_{k}"] = 0
 
-    groups = ([MOM_GROUP] if market == "US" else []) + HL_GROUPS + ([MOM_GROUP] if market == "TH" else [])
+    groups = ALL_GROUPS
     _highlights(t, p, groups, members,
                 "⭐ หุ้นเด่นวันนี้" if asof is None else f"⭐ หุ้นเด่น ณ {day:%d %b %Y}", dropped, cap)
 
@@ -967,14 +1125,20 @@ def render_signals_tab(universe: pd.DataFrame, clickable_table=None, market: str
         r0 = t[t["yahoo"] == sym].iloc[0]
         if pd.notna(r0["mom"]):
             st.caption(f"🚀 โมเมนตัม 12 เดือน: {r0['mom']:+.1%} · อันดับ {int(r0['mom_rank'])} จาก {int(t['mom_rank'].max())}")
-        _detail(t, load_prices(syms, period_of(market)), sym, asof)
+        # ใช้ผลคำนวณล่วงหน้า -> ดึงราคาเฉพาะหุ้นตัวที่เลือก (ไม่ต้องโหลดทั้งตลาด)
+        _detail(t, load_prices((sym,) if from_cache else syms, period_of(market)), sym, asof)
         if len(h):
             _streak_panel(h, sym, cap)
         _log_history(log, sym)
     if ss.pop(f"{p}_scroll", False):
         _scroll_to(f"{p}-detail")
 
-    tab_a, tab_b, tab_c = st.tabs(["📋 ตารางสัญญาณรายตัว", "🌈 Market Lens: Signal Spectrum", "🧪 ทดสอบย้อนหลัง & วิธีคิด"])
+    tab_a, tab_b, tab_c, tab_d = st.tabs(["📋 ตารางสัญญาณรายตัว", "🌈 Market Lens: Signal Spectrum",
+                                          "🧪 ทดสอบย้อนหลัง & วิธีคิด", "📒 ผลจริงจากบันทึก"],
+                                         key=f"{p}_subtabs", on_change="rerun")
+    with tab_d:
+        if getattr(tab_d, "open", True):  # โหลดราคาทั้งตลาดเฉพาะตอนเปิดแท็บนี้
+            _render_log_results(market, syms)
     with tab_a:
         v = t.copy()
         if flt == "บวกวันนี้":
@@ -993,6 +1157,8 @@ def render_signals_tab(universe: pd.DataFrame, clickable_table=None, market: str
             v = v[v["box"].isin(["EYE", "RG"])]
         elif flt.startswith("🚀"):
             v = v[v["mom_rank"] <= 20]
+        elif flt.startswith("✅"):
+            v = v[(v["mom_rank"] <= 20) & (v["box"] != "X")]
         elif flt.startswith("🆕"):
             s = v[[f"stk_{k}" for k in GKEYS]]
             v = v[((s >= 1) & (s <= 3)).any(axis=1)]
@@ -1021,7 +1187,8 @@ def render_signals_tab(universe: pd.DataFrame, clickable_table=None, market: str
             "คะแนน": v["score"],
             "ผลอ่าน": v["verdict"].map(VERDICT_ICON),
             "Spectrum": v["spec"],
-            "พิเศษ": (v["mom_rank"].map(lambda x: "🚀 " if x <= 20 else "") + v["purple"].map(lambda x: "◆ " if x else "")
+            "พิเศษ": (((v["mom_rank"] <= 20) & (v["box"] != "X")).map(lambda x: "✅ " if x else "")
+                      + v["mom_rank"].map(lambda x: "🚀 " if x <= 20 else "") + v["purple"].map(lambda x: "◆ " if x else "")
                       + v["white"].map(lambda x: "▣ " if x else "") + v["watch"].map(lambda x: "★" if x else "")),
             "ติดกลุ่มต่อเนื่อง": [" ".join(("🆕" if r[f"stk_{k}"] == 1 else "") + f"{GROUP_SHORT[k]}{r[f'stk_{k}']}ว"
                                            for k in GKEYS if r[f"stk_{k}"] > 0) for _, r in v.iterrows()],

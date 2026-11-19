@@ -20,10 +20,10 @@ date,yahoo,symbol,groups,verdict,score,spec,box,dir,mom,mom_rank,price
 2026-11-18,EGCO.BK,EGCO,strong,ถือ,3,60,G,UP,0.0897,68.0,134.5
 2026-11-18,MEGA.BK,MEGA,strong,ถือ,3,55,G,UP,0.1525,59.0,36.5
 2026-11-18,PR9.BK,PR9,strong,ถือ,2,60,B,SW,-0.08,86.0,19.1
-2026-11-18,KKP.BK,KKP,mom|strong,ถือ,2,55,G,SW,0.887,14.0,115.5
+2026-11-18,KKP.BK,KKP,pass|mom|strong,ถือ,2,55,G,SW,0.887,14.0,115.5
 2026-11-18,BDMS.BK,BDMS,strong,ถือ,2,50,B,UP,0.0643,70.0,20.45
-2026-11-18,HANA.BK,HANA,mom|strong,ถือ,2,45,G,DN,1.2247,7.0,46.2
-2026-11-18,WHAUP.BK,WHAUP,mom|star,ถือ,2,35,Y,V,0.754,17.0,7.16
+2026-11-18,HANA.BK,HANA,pass|mom|strong,ถือ,2,45,G,DN,1.2247,7.0,46.2
+2026-11-18,WHAUP.BK,WHAUP,pass|mom|star,ถือ,2,35,Y,V,0.754,17.0,7.16
 2026-11-18,PRM.BK,PRM,watch,รอ,0,5,EYE,SW,0.3926,37.0,8.7
 2026-11-18,STECON.BK,STECON,mom,รอ,0,-5,X,SW,1.2514,6.0,17.35
 2026-11-18,MRDIYT.BK,MRDIYT,star,ไม่ซื้อ,-1,-20,X,V,,,8.72

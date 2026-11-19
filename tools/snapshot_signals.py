@@ -44,9 +44,14 @@ def main():
     ok = 0
     for market in ("TH", "US"):
         try:
-            t = S.signal_table(universe(market), "D", market, last_closed_day(market))
+            syms, asof = universe(market), last_closed_day(market)
+            t = S.signal_table(syms, "D", market, asof)
             day, n = S.save_snapshot(t, market)
             print(f"{S.LOG_KEY[market]}: {day} บันทึก {n} หุ้น")
+            # ผลคำนวณเต็มตาราง + ประวัติสมาชิกกลุ่ม ให้หน้าเว็บอ่านได้ทันที (files/signal_cache)
+            h = S.membership_history(syms, market, asof, 60 if market == "TH" else 40)
+            S.save_cache(t, h, market)
+            print(f"{S.LOG_KEY[market]}: บันทึกผลคำนวณล่วงหน้า {len(t)} หุ้น · ประวัติ {h['date'].nunique()} วัน")
             ok += 1
         except Exception as e:  # ตลาดหนึ่งพังไม่ให้กระทบอีกตลาด
             print(f"{S.LOG_KEY[market]}: ผิดพลาด {type(e).__name__}: {e}")

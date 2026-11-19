@@ -19,6 +19,8 @@
 !/files/_SET.BK_history_import.csv
 # บันทึกรายชื่อหุ้นที่ติดสัญญาณรายวัน (tools/snapshot_signals.py)
 !/files/signal_log/
+# ผลคำนวณสัญญาณล่วงหน้าให้หน้าเว็บเปิดได้เร็ว (tools/snapshot_signals.py)
+!/files/signal_cache/
 
 __pycache__/
 *.pyc
