@@ -10,6 +10,7 @@
   ยอดต่ำลง = แบ่ง 4 ช่วง ต่ำลงอย่างน้อย 2 ใน 3 ครั้ง, ทะลุ = ราคาปิดเหนือขอบบน (ที่ลากต่อ) หลังจบช่อง
 - รูปทรงรายเดือน, RSI, ยอด MACD และกล่อง ✓ เหลือง ปรับตามโค้ดจริงของ SOMMIT (ดู RULES_MD)
 """
+import datetime as dt
 import os
 
 import numpy as np
@@ -382,11 +383,95 @@ SECTOR_TH = {"Financial Services": "การเงิน", "Consumer Cyclical":
              "Consumer Discretionary": "สินค้าฟุ่มเฟือย", "Consumer Staples": "สินค้าจำเป็น", "Materials": "วัตถุดิบ"}
 
 
+def period_of(market: str) -> str:
+    return "10y" if market == "TH" else "5y"
+
+
+# ======================= บันทึกรายชื่อหุ้นเด่นรายวัน (files/signal_log/<ตลาด>_<ปี>.csv) =======================
+LOG_DIR = os.path.join(FILES, "signal_log")
+LOG_KEY = {"TH": "set100", "US": "sp500"}
+LOG_COLS = ["date", "yahoo", "symbol", "groups", "verdict", "score", "spec", "box", "dir", "mom", "mom_rank", "price"]
+
+
+def snapshot_rows(t: pd.DataFrame) -> pd.DataFrame:
+    """หุ้นที่ติดกลุ่มเด่นอย่างน้อย 1 กลุ่ม หรือได้ผลอ่าน "ซื้อ" ณ วันทำการล่าสุดของตลาด"""
+    t = t[~t["stale"]]
+    t = t[t["date"] == t["date"].max()]
+    flags = pd.DataFrame({k: rule(t).fillna(False).astype(bool) for k, _, _, rule in [MOM_GROUP] + HL_GROUPS})
+    grp = flags.apply(lambda r: "|".join(k for k in flags.columns if r[k]), axis=1)
+    keep = (grp != "") | (t["verdict"] == "ซื้อ")
+    out = t[keep].assign(groups=grp[keep])[LOG_COLS].copy()
+    out["date"] = out["date"].dt.strftime("%Y-%m-%d")
+    out["mom"] = out["mom"].round(4)
+    out["price"] = out["price"].round(4)
+    return out.sort_values(["score", "spec"], ascending=False)
+
+
+def save_snapshot(t: pd.DataFrame, market: str) -> tuple:
+    rows = snapshot_rows(t)
+    if rows.empty:
+        return None, 0
+    day = rows["date"].iloc[0]
+    os.makedirs(LOG_DIR, exist_ok=True)
+    path = os.path.join(LOG_DIR, f"{LOG_KEY[market]}_{day[:4]}.csv")
+    old = pd.read_csv(path) if os.path.exists(path) else pd.DataFrame(columns=LOG_COLS)
+    new = pd.concat([old[old["date"] != day], rows], ignore_index=True).sort_values(["date", "score"], ascending=[True, False])
+    new.to_csv(path, index=False, encoding="utf-8")
+    return day, len(rows)
+
+
+def _log_files(market: str) -> tuple:
+    if not os.path.isdir(LOG_DIR):
+        return ()
+    fs = sorted(f for f in os.listdir(LOG_DIR) if f.startswith(LOG_KEY[market] + "_") and f.endswith(".csv"))
+    return tuple((f, os.path.getmtime(os.path.join(LOG_DIR, f))) for f in fs)
+
+
+@st.cache_data(show_spinner=False)
+def _read_log(files: tuple) -> pd.DataFrame:
+    parts = [pd.read_csv(os.path.join(LOG_DIR, f)) for f, _ in files]
+    return pd.concat(parts, ignore_index=True) if parts else pd.DataFrame(columns=LOG_COLS)
+
+
+def load_log(market: str) -> pd.DataFrame:
+    return _read_log(_log_files(market))  # คีย์แคชผูกกับเวลาแก้ไขไฟล์ จึงอ่านใหม่เมื่อมีบันทึกเพิ่ม
+
+
+GROUP_ICON = {"mom": "🚀 โมเมนตัม", "strong": "💪 แข็งแกร่ง", "watch": "🌱 น่าติดตาม", "purple": "◆ กรอบม่วง",
+              "star": "★ น่าจับตา"}
+
+
+def _log_history(log: pd.DataFrame, sym: str):
+    """ประวัติการติดกลุ่มหุ้นเด่นของหุ้นตัวนี้ จากบันทึกรายวัน"""
+    h = log[log["yahoo"] == sym] if len(log) else log
+    if not len(h):
+        st.caption("📒 หุ้นตัวนี้ยังไม่มีในบันทึกรายชื่อรายวัน")
+        return
+    with st.expander(f"📒 ประวัติการติดสัญญาณจากบันทึกจริง · {h['date'].nunique()} วัน "
+                     f"(ล่าสุด {pd.to_datetime(h['date']).max():%d/%m/%Y})"):
+        v = h.sort_values("date", ascending=False)
+        st.dataframe(pd.DataFrame({
+            "วันที่": v["date"],
+            "กลุ่มที่ติด": v["groups"].fillna("").map(lambda g: " · ".join(GROUP_ICON.get(k, k) for k in str(g).split("|") if k)),
+            "ผลอ่าน": v["verdict"].map(VERDICT_ICON),
+            "คะแนน": v["score"], "Spectrum": v["spec"],
+            "โมเมนตัม 12 ด.": v["mom"] * 100, "ราคา": v["price"],
+        }), hide_index=True, use_container_width=True, height=min(35 * len(v) + 40, 300), column_config={
+            "คะแนน": st.column_config.NumberColumn(format="%+d"),
+            "โมเมนตัม 12 ด.": st.column_config.NumberColumn(format="%+.0f%%"),
+            "ราคา": st.column_config.NumberColumn(format="%.2f")})
+
+
 @st.cache_data(ttl=3600, show_spinner=False)
-def signal_table(syms: tuple, tf: str = "D", market: str = "TH") -> pd.DataFrame:
-    px = load_prices(syms, "10y" if market == "TH" else "5y")
+def signal_table(syms: tuple, tf: str = "D", market: str = "TH", asof=None) -> pd.DataFrame:
+    """asof = None ใช้ราคาล่าสุด · ใส่วันที่ = คำนวณสัญญาณย้อนหลังจากราคาปิด ณ วันนั้น (หรือวันทำการก่อนหน้า)"""
+    px = load_prices(syms, period_of(market))
     rows = []
     for s, df in px.items():
+        if asof is not None:
+            df = df[df.index <= pd.Timestamp(asof)]
+            if len(df) < 230:
+                continue
         a = indicators(df)
         r = evaluate(a, len(df) - 1)
         # โมเมนตัม 12-1: ผลตอบแทนรวมปันผล 12 เดือน ไม่นับเดือนล่าสุด (ผล backtest ดีกว่าสัญญาณ SOMMIT ทั้งไทยและสหรัฐ)
@@ -495,8 +580,10 @@ def _spectrum_fig(t: pd.DataFrame):
     return f
 
 
-def _detail(t: pd.DataFrame, px: dict, sym: str):
+def _detail(t: pd.DataFrame, px: dict, sym: str, asof=None):
     r = t[t["yahoo"] == sym].iloc[0]
+    if asof is not None:  # ดูย้อนหลัง: ตัดกราฟถึงวันที่เลือก
+        px = {sym: px[sym][px[sym].index <= pd.Timestamp(asof)]}
     st.markdown(f"##### {r['symbol']} · {r['sector_th']} · {r.get('industry') or ''}")
     c = st.columns(5)
     c[0].metric("ผลอ่าน", VERDICT_ICON[r["verdict"]], f"คะแนนกฎ {r['score']:+d}", delta_color="off")
@@ -579,10 +666,13 @@ MOM_GROUP = ("mom", "🚀 โมเมนตัมสูงสุด 12 เด�
 HL_LIMIT = 40  # จำนวนชิปสูงสุดต่อกล่อง (S&P 500 มีหุ้นเข้ากลุ่มได้เป็นร้อยตัว)
 
 
-def _highlights(t: pd.DataFrame, p: str, groups):
-    """แผงหุ้นเด่นด้านบนแท็บ: กดชื่อหุ้นเพื่อดูเหตุผลและกราฟในช่องเหตุผลรายตัว"""
+def _highlights(t: pd.DataFrame, p: str, groups, members: dict = None, title: str = "⭐ หุ้นเด่นวันนี้"):
+    """แผงหุ้นเด่นด้านบนแท็บ: กดชื่อหุ้นเพื่อดูเหตุผลและกราฟในช่องเหตุผลรายตัว
+    members = {กลุ่ม: set(yahoo)} จากบันทึกรายวัน (ถ้ามี) แทนการคำนวณกฎใหม่"""
+    if members is not None:
+        groups = [(k, ttl, d, (lambda t, k=k: t["yahoo"].isin(members.get(k, set())))) for k, ttl, d, _ in groups]
     st.markdown(HL_CSS, unsafe_allow_html=True)
-    st.markdown("#### ⭐ หุ้นเด่นวันนี้ <span style='font-size:.8rem;color:gray;font-weight:400'>"
+    st.markdown(f"#### {title} <span style='font-size:.8rem;color:gray;font-weight:400'>"
                 "กดชื่อหุ้นเพื่อดูเหตุผลและกราฟด้านล่าง · ตัวเลข = คะแนนกฎ (🚀 = ผลตอบแทน 12 เดือน) · ไม่ใช่คำแนะนำซื้อขาย</span>",
                 unsafe_allow_html=True)
     ss = st.session_state
@@ -642,33 +732,88 @@ SORTS = ["คำแนะนำการลงทุน (กล่องสี)"
          "โมเมนตัม 12 เดือน (มาก→น้อย)"]
 
 
+MARKETS = {"TH": "🇹🇭 SET100", "US": "🇺🇸 S&P 500"}
+
+
+def render_signals_hub(set100: pd.DataFrame, us: pd.DataFrame):
+    """แท็บเดียวรวม 2 ตลาด · เลือกตลาดก่อน แล้วค่อยคำนวณเฉพาะตลาดนั้น (ไม่โหลดหุ้น 600 ตัวพร้อมกัน)"""
+    mk = st.segmented_control("ตลาด", list(MARKETS), format_func=MARKETS.get, default="TH", key="sig_market",
+                              label_visibility="collapsed")
+    mk = mk or "TH"
+    if mk == "TH":
+        render_signals_tab(set100, market="TH")
+    else:
+        render_signals_tab(us[us["sp500"] == 1], market="US")
+
+
+def _date_picker(p: str, market: str):
+    """📅 ดูสัญญาณ ณ วันที่ · คืน None เมื่อเป็นวันนี้ (ใช้ราคาล่าสุด)"""
+    ss = st.session_state
+    today = dt.date.today()
+    lo = today - dt.timedelta(days=365 * (5 if market == "TH" else 3))
+    log = load_log(market)
+    logged = sorted(pd.to_datetime(log["date"]).dt.date.unique()) if len(log) else []
+    if not isinstance(ss.get(f"{p}_asof"), dt.date):
+        ss[f"{p}_asof"] = today
+    c1, c2 = st.columns([1.3, 3])
+    d = c1.date_input("📅 ดูสัญญาณ ณ วันที่", min_value=lo, max_value=today, key=f"{p}_asof", format="DD/MM/YYYY",
+                      help="เลือกวันในอดีตเพื่อดูว่าวันนั้นหุ้นตัวไหนติดสัญญาณ · วันหยุดจะใช้ราคาปิดวันทำการก่อนหน้า")
+    if logged:
+        c2.caption(f"📒 มีบันทึกรายชื่อจริง {len(logged)} วัน ({logged[0]:%d/%m/%Y} – {logged[-1]:%d/%m/%Y}) · "
+                   "วันอื่นจะคำนวณย้อนหลังจากราคาในอดีต")
+    else:
+        c2.caption("📒 ยังไม่มีบันทึกรายชื่อจริง (GitHub Actions จะเริ่มบันทึกทุกวันทำการ) · วันในอดีตจะคำนวณย้อนหลังจากราคา")
+    return None if d >= today else d, log
+
+
 def render_signals_tab(universe: pd.DataFrame, clickable_table=None, market: str = "TH"):
-    """แท็บสัญญาณเทคนิค · market="TH" (SET100) หรือ "US" (S&P 500) · คีย์ session แยกกันตามตลาด"""
+    """สัญญาณเทคนิคของตลาดเดียว · market="TH" (SET100) หรือ "US" (S&P 500) · คีย์ session แยกกันตามตลาด"""
     p = "sig" if market == "TH" else "usig"
     ss = st.session_state
     if f"{p}_pick" in ss:  # หุ้นที่คลิกมาจากแผงหุ้นเด่น/ตาราง/Spectrum -> ตั้งค่าก่อนสร้าง selectbox
         ss[f"{p}_detail"] = ss.pop(f"{p}_pick")
     syms = tuple(universe["yahoo"])
     star = dict(zip(universe["yahoo"], universe["set50"])) if "set50" in universe else {}
+    asof, log = _date_picker(p, market)
     o1, o2, o3 = st.columns([1.2, 1.6, 1.4])
     tf = o1.radio("กล่องสีคำนวณจากแท่ง", ["D", "W", "M"], horizontal=True, key=f"{p}_tf",
                   format_func={"D": "รายวัน", "W": "1W", "M": "1M"}.get,
                   help="1W/1M เปลี่ยนเฉพาะกล่องสีในตาราง · คะแนนกฎและ Spectrum คำนวณจากแท่งรายวันเสมอ")
     sort = o2.selectbox("เรียงตาม", SORTS, key=f"{p}_sort", index=4 if market == "US" else 0)
     flt = o3.selectbox("กรอง", FILTERS, key=f"{p}_flt")
-    t = signal_table(syms, tf, market)
+    with st.spinner("กำลังคำนวณสัญญาณ ..."):
+        t = signal_table(syms, tf, market, asof)
     if t.empty:
-        st.warning("ดึงราคาไม่สำเร็จ ลองใหม่อีกครั้ง")
+        st.warning("ไม่มีข้อมูลราคาพอสำหรับวันที่เลือก")
         return
     stale = t[t["stale"]]
     if len(stale):
-        st.warning("ไม่แสดง " + ", ".join(f"{r.symbol} (ข้อมูลขาดช่วง {r.gap_days} วัน)" for r in stale.itertuples())
-                   + " เพราะราคาย้อนหลังจาก Yahoo ไม่ครบ สัญญาณจะคลาดเคลื่อน")
+        last = t["date"].max()
+        st.warning("ไม่แสดง " + ", ".join(
+            f"{r.symbol} (" + (f"ไม่มีราคาตั้งแต่ {r.date:%d %b %Y}" if r.date < last - pd.Timedelta(days=7)
+                               else f"ข้อมูลขาดช่วง {r.gap_days} วัน") + ")" for r in stale.itertuples())
+            + " เพราะราคาย้อนหลังจาก Yahoo ไม่ครบ สัญญาณจะคลาดเคลื่อน")
         t = t[~t["stale"]]
-    asof = t["date"].max()
+    day = t["date"].max()
     src = "ราคาจริง ไม่ปรับปันผล เหมือน set.or.th" if market == "TH" else "ราคาจริง ไม่ปรับปันผล"
-    st.caption(f"ข้อมูลถึง {asof:%d %b %Y} · {len(t)} หุ้น · คำนวณจาก Yahoo Finance ({src}) · "
-               "คลิกชื่อหุ้น แถวในตาราง หรือช่องใน Spectrum เพื่อดูเหตุผลและกราฟในช่อง 🔍 เหตุผลรายตัว")
+    # บันทึกจริงของวันนั้น (ถ้ามี) -> ใช้รายชื่อหุ้นเด่นจากบันทึก ไม่คำนวณกฎใหม่
+    L = log[log["date"] == f"{day:%Y-%m-%d}"] if len(log) else log
+    members = None
+    if len(L):
+        members = {}
+        for y, g in zip(L["yahoo"], L["groups"].fillna("")):
+            for k in str(g).split("|"):
+                if k:
+                    members.setdefault(k, set()).add(y)
+    if asof is None:
+        st.caption(f"ข้อมูลถึง {day:%d %b %Y} · {len(t)} หุ้น · คำนวณจาก Yahoo Finance ({src}) · "
+                   "คลิกชื่อหุ้น แถวในตาราง หรือช่องใน Spectrum เพื่อดูเหตุผลและกราฟในช่อง 🔍 เหตุผลรายตัว")
+    elif members is not None:
+        st.success(f"📒 **ย้อนดูวันที่ {day:%d %b %Y}** · แผงหุ้นเด่นแสดงจาก **บันทึกจริงของวันนั้น** · "
+                   "ตาราง กราฟ และเหตุผลรายตัว คำนวณย้อนหลังจากราคา ณ วันนั้น")
+    else:
+        st.info(f"🧮 **ย้อนดูวันที่ {day:%d %b %Y}** (คำนวณย้อนหลังจากราคาปิด ณ วันนั้น · ไม่มีบันทึกจริงของวันนี้) · "
+                "อาจต่างจากที่เคยแสดงจริงเล็กน้อย เพราะใช้รายชื่อหุ้นในดัชนีปัจจุบัน")
     if market == "US":
         st.warning("⚠️ ผล backtest ปี 2014–2026: กฎแบบ SOMMIT **ใช้กับหุ้น S&P 500 ไม่ได้ผล** (หุ้นที่ได้ \"ซื้อ\" แพ้ตลาด, "
                    "\"ขาย\" กลับชนะตลาด) · ตัวที่ได้ผลดีกว่าคือ 🚀 โมเมนตัม 12 เดือน · รายละเอียดในแท็บย่อย 🧪 ทดสอบย้อนหลัง")
@@ -680,11 +825,13 @@ def render_signals_tab(universe: pd.DataFrame, clickable_table=None, market: str
     m[5].metric("◆ กรอบม่วง", int(t["purple"].sum()))
     m[6].metric("★ น่าจับตา", int(t["watch"].sum()))
 
-    _highlights(t, p, ([MOM_GROUP] if market == "US" else []) + HL_GROUPS + ([MOM_GROUP] if market == "TH" else []))
+    groups = ([MOM_GROUP] if market == "US" else []) + HL_GROUPS + ([MOM_GROUP] if market == "TH" else [])
+    _highlights(t, p, groups, members,
+                "⭐ หุ้นเด่นวันนี้" if asof is None else f"⭐ หุ้นเด่น ณ {day:%d %b %Y}")
 
-    # ----- เหตุผลรายตัว + กราฟ (ต่อจากหุ้นเด่นวันนี้) -----
+    # ----- เหตุผลรายตัว + กราฟ (ต่อจากหุ้นเด่น) -----
     st.markdown(f"<div id='{p}-detail'></div>", unsafe_allow_html=True)
-    st.markdown("#### 🔍 เหตุผลรายตัว")
+    st.markdown("#### 🔍 เหตุผลรายตัว" + ("" if asof is None else f" ณ {day:%d %b %Y}"))
     opts = sorted(t["yahoo"])
     names = dict(zip(t["yahoo"], t["industry"])) if market == "US" else {}
     if ss.get(f"{p}_detail") not in opts:
@@ -702,7 +849,8 @@ def render_signals_tab(universe: pd.DataFrame, clickable_table=None, market: str
         r0 = t[t["yahoo"] == sym].iloc[0]
         if pd.notna(r0["mom"]):
             st.caption(f"🚀 โมเมนตัม 12 เดือน: {r0['mom']:+.1%} · อันดับ {int(r0['mom_rank'])} จาก {int(t['mom_rank'].max())}")
-        _detail(t, load_prices(syms, "10y" if market == "TH" else "5y"), sym)
+        _detail(t, load_prices(syms, period_of(market)), sym, asof)
+        _log_history(log, sym)
     if ss.pop(f"{p}_scroll", False):
         _scroll_to(f"{p}-detail")
 
