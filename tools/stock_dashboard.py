@@ -25,6 +25,7 @@ from history_backtest import render_history_tab
 from set_signals import render_signals_hub
 from market_mood import render_mood_tab
 from market_allocation import render_allocation_tab
+from tv_chart import lw_chart, tv_widget, tv_symbol, signal_events, MARKERS, DEFAULT_MARKERS
 
 st.set_page_config(page_title="Stock Dashboard", page_icon="📈", layout="wide")
 
@@ -537,30 +538,37 @@ with tab1:
         st.warning(f"ไม่พบข้อมูล {sym} สำหรับช่วง {period_label}")
     else:
         close_only = bool((df["Volume"] == 0).all() and (df["Open"] == df["Close"]).all())
-        if close_only:
-            chart_type = "เส้น"
-            st.caption("ข้อมูลนี้มีแค่ราคาปิด (จาก files/assets_prices.csv) จึงแสดงเป็นกราฟเส้น")
+        daily = interval in ("1d", "1wk", "1mo")
+        view = st.segmented_control("มุมมองกราฟ", ["⚡ กราฟเร็ว + สัญญาณ", "📊 TradingView เต็มรูปแบบ"],
+                                    default="⚡ กราฟเร็ว + สัญญาณ", key="chart_view")
+        if view == "📊 TradingView เต็มรูปแบบ":
+            tv_widget(sym, interval={"1m": "1", "5m": "5", "30m": "30", "1d": "D", "1wk": "W", "1mo": "M"}.get(interval, "D"))
+            st.caption(f"กราฟและข้อมูลของ TradingView ({tv_symbol(sym)}) · วาดเส้นเทรนด์/Fibonacci และเพิ่มอินดิเคเตอร์ได้จากแถบเครื่องมือ · "
+                       "เส้นที่วาดจะไม่ถูกบันทึกเมื่อเปิดใหม่ · หุ้นไทยอาจเป็นราคาหน่วงเวลา")
         else:
-            chart_type = st.radio("รูปแบบกราฟ", ["แท่งเทียน", "เส้น"], horizontal=True)
-        fig = make_subplots(rows=2, cols=1, shared_xaxes=True, row_heights=[0.75, 0.25], vertical_spacing=0.03)
-        if chart_type == "แท่งเทียน":
-            fig.add_trace(go.Candlestick(x=df.index, open=df["Open"], high=df["High"], low=df["Low"],
-                                         close=df["Close"], name=sym), row=1, col=1)
-        else:
-            fig.add_trace(go.Scatter(x=df.index, y=df["Close"], name=sym, line=dict(width=2)), row=1, col=1)
-        if interval in ("1d", "1wk"):
-            for n in show_ma:
-                if len(df) >= n:
-                    fig.add_trace(go.Scatter(x=df.index, y=df["Close"].rolling(n).mean(),
-                                             name=f"MA{n}", line=dict(width=1.2)), row=1, col=1)
-        colors = ["#2ca02c" if c >= o else "#d62728" for o, c in zip(df["Open"], df["Close"])]
-        fig.add_trace(go.Bar(x=df.index, y=df["Volume"], name="Volume", marker_color=colors, showlegend=False),
-                      row=2, col=1)
-        fig.update_layout(height=620, xaxis_rangeslider_visible=False, margin=dict(l=10, r=10, t=30, b=10),
-                          legend=dict(orientation="h", y=1.04), hovermode="x unified")
-        if interval in ("1d", "1wk", "1mo") and not sym.endswith("-USD"):
-            fig.update_xaxes(rangebreaks=[dict(bounds=["sat", "mon"])])
-        st.plotly_chart(fig, use_container_width=True)
+            o1, o2, o3 = st.columns([1, 1, 3])
+            if close_only:
+                chart_type = "เส้น"
+                o1.caption("ข้อมูลนี้มีแค่ราคาปิด จึงแสดงเป็นกราฟเส้น")
+            else:
+                chart_type = o1.radio("รูปแบบกราฟ", ["แท่งเทียน", "เส้น"], horizontal=True)
+            ma_kind = o2.radio("เส้นค่าเฉลี่ย", ["SMA", "EMA"], horizontal=True, key="chart_ma_kind",
+                               help="จำนวนวันเลือกได้ที่แถบซ้าย (เส้นค่าเฉลี่ย MA)")
+            keys = []
+            if interval == "1d":
+                keys = o3.multiselect("ปักสัญญาณบนกราฟ (กฎชุดเดียวกับแท็บสัญญาณเทคนิค)", list(MARKERS),
+                                      default=DEFAULT_MARKERS, format_func=lambda k: MARKERS[k][0], key="chart_marks")
+            else:
+                o3.caption("ปักสัญญาณได้เฉพาะกราฟรายวัน (เลือกช่วงเวลา 3 เดือนขึ้นไปที่แถบซ้าย)")
+            events = None
+            if keys:
+                with st.spinner("กำลังคำนวณสัญญาณย้อนหลัง ..."):
+                    events = signal_events(sym, start=df.index[0])
+            lw_chart(df, ma=show_ma if daily else (), ma_kind=ma_kind, events=events, keys=keys, height=580,
+                     intraday=not daily, line=chart_type == "เส้น")
+            st.caption("ซูมด้วยล้อเมาส์ · ลากเพื่อเลื่อน · ดับเบิลคลิกแกนราคาเพื่อรีเซ็ต · ตัวอักษรบนกราฟ = วันแรกที่เกิดสัญญาณ "
+                       "(💪 เข้ากลุ่มแข็งแกร่ง · ซื้อ/ขาย = ผลอ่านเปลี่ยน · A/C = สูตรที่ทดสอบย้อนหลังแล้วชนะตลาดใน 20 วัน) · "
+                       "ไม่ใช่คำแนะนำซื้อขาย")
 
         first, last = df["Close"].iloc[0], df["Close"].iloc[-1]
         c1, c2, c3, c4 = st.columns(4)
