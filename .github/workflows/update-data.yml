@@ -39,6 +39,11 @@ jobs:
           done
         continue-on-error: true
 
+      - name: Update S&P 500 P/E and dividend yield (files/sp500_valuation_monthly.csv)
+        # ไฟล์สำรองของแท็บสัดส่วนหุ้น-พันธบัตร · ถ้าดึงไม่สำเร็จ ไฟล์เดิมไม่เสีย
+        run: python tools/fetch_valuation.py
+        continue-on-error: true
+
       - name: Update US index constituents (files/us_indices.csv)
         if: github.event.schedule == '0 23 1 * *' || github.event_name == 'workflow_dispatch'
         # ถ้าดึงไม่สำเร็จ สคริปต์จะหยุดก่อนเขียนไฟล์ ไฟล์เดิมจึงไม่เสีย
