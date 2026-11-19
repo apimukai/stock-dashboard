@@ -10,6 +10,7 @@
   ยอดต่ำลง = แบ่ง 4 ช่วง ต่ำลงอย่างน้อย 2 ใน 3 ครั้ง, ทะลุ = ราคาปิดเหนือขอบบน (ที่ลากต่อ) หลังจบช่อง
 - รูปทรงรายเดือน, RSI, ยอด MACD และกล่อง ✓ เหลือง ปรับตามโค้ดจริงของ SOMMIT (ดู RULES_MD)
 """
+import datetime as dt
 import os
 
 import numpy as np
@@ -331,6 +332,60 @@ def evaluate(a, i) -> dict:
                 chg1=c / a["c"][i - 1] - 1)
 
 
+def group_flags(a, i) -> dict:
+    """เฉพาะเงื่อนไขที่ใช้ตัดสินกลุ่มเด่น (เร็วกว่า evaluate ทั้งชุด) · นิยามเดียวกับ evaluate()"""
+    box, _, _ = box_level(a, i)
+    d, _, _ = direction(a["c"][max(0, i - 28):i + 1])
+    bull, _ = candles(a, i)
+    strong = box in ("G", "B")
+    return {"strong": strong, "watch": box in ("EYE", "RG"),
+            "purple": strong and d == "V" and monthly_shape(a, i) == "UP" and macd_hh(a, i) == "strong",
+            "star": (box == "RG" and bool(bull)) or (d == "V" and box != "EYE" and not (box == "X" and bull))}
+
+
+GKEYS = ["mom", "strong", "watch", "purple", "star"]
+
+
+def streak_table(h: pd.DataFrame) -> tuple:
+    """h = สมาชิกกลุ่มรายวัน -> (ตารางจำนวนวันติดต่อเนื่องถึงวันล่าสุดของแต่ละกลุ่ม, ตาราง "เมื่อวานอยู่ แต่วันนี้หลุด", รายการวันที่)"""
+    dates = sorted(h["date"].unique())
+    stk, out = {}, {}
+    for k in GKEYS:
+        piv = h.pivot_table(index="date", columns="yahoo", values=k, aggfunc="max").reindex(dates)
+        arr = piv.fillna(False).astype(bool).to_numpy()[::-1]  # แถวแรก = วันล่าสุด
+        nf = ~arr
+        stk[k] = pd.Series(np.where(nf.any(axis=0), nf.argmax(axis=0), arr.shape[0]), index=piv.columns)
+        out[k] = pd.Series(arr[1] & ~arr[0] if len(arr) > 1 else np.zeros(arr.shape[1], bool), index=piv.columns)
+    return pd.DataFrame(stk), pd.DataFrame(out), dates
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def membership_history(syms: tuple, market: str, asof=None, n: int = 40) -> pd.DataFrame:
+    """สมาชิกกลุ่มเด่นของทุกหุ้น ย้อนหลัง n วันทำการถึงวันที่ดู (คำนวณจากราคา ไม่ต้องรอบันทึก)"""
+    px = load_prices(syms, period_of(market))
+    recs = []
+    for s, df in px.items():
+        if asof is not None:
+            df = df[df.index <= pd.Timestamp(asof)]
+        if len(df) < 260:
+            continue
+        a = indicators(df)
+        adj = df["Adj Close"].to_numpy() if "Adj Close" in df else a["c"]
+        for i in range(len(df) - n, len(df)):
+            f = group_flags(a, i)
+            f["yahoo"], f["date"] = s, df.index[i]
+            f["mom_v"] = adj[i - 21] / adj[i - 252] - 1
+            recs.append(f)
+    h = pd.DataFrame(recs)
+    if h.empty:
+        return h
+    keep = h["date"].value_counts()
+    keep = sorted(keep[keep >= keep.max() * 0.5].index)[-n:]  # วันทำการของตลาด (ตัดวันของหุ้นที่ข้อมูลหาย)
+    h = h[h["date"].isin(keep)].copy()
+    h["mom"] = h.groupby("date")["mom_v"].rank(ascending=False, method="first") <= 20
+    return h
+
+
 def summary_text(lvl, n_sup, n_warn):
     good = lvl >= 1
     if n_sup and not n_warn:
@@ -343,7 +398,7 @@ def summary_text(lvl, n_sup, n_warn):
 
 
 # ======================= ข้อมูล =======================
-@st.cache_data(ttl=3600, show_spinner="กำลังดึงราคาย้อนหลัง SET100 (ครั้งแรกอาจใช้เวลาราว 1 นาที) ...")
+@st.cache_data(ttl=3600, show_spinner="กำลังดึงราคาย้อนหลังของหุ้นทั้งชุด (ครั้งแรกอาจใช้เวลาราว 1–2 นาที) ...")
 def load_prices(syms: tuple, period: str = "10y") -> dict:
     # ราคาจริง (ไม่ปรับปันผล ปรับเฉพาะ split) ให้ตรงกับ set.or.th ที่ SOMMIT ใช้ · เก็บ Adj Close ไว้คิดผลตอบแทนใน backtest
     d = yf.download(list(syms), period=period, interval="1d", group_by="ticker", auto_adjust=False,
@@ -360,7 +415,13 @@ def load_prices(syms: tuple, period: str = "10y") -> dict:
     return out
 
 
-def load_sectors() -> pd.DataFrame:
+def load_sectors(market: str = "TH") -> pd.DataFrame:
+    if market == "US":  # GICS sector + ชื่อบริษัทจาก files/us_indices.csv
+        p = os.path.join(FILES, "us_indices.csv")
+        if not os.path.exists(p):
+            return pd.DataFrame(columns=["yahoo", "sector", "industry"])
+        u = pd.read_csv(p, comment="#")
+        return u.loc[u["sp500"] == 1, ["yahoo", "sector", "name"]].rename(columns={"name": "industry"})
     p = os.path.join(FILES, "set100_sectors.csv")
     if not os.path.exists(p):
         return pd.DataFrame(columns=["yahoo", "sector", "industry", "shares"])
@@ -370,16 +431,106 @@ def load_sectors() -> pd.DataFrame:
 SECTOR_TH = {"Financial Services": "การเงิน", "Consumer Cyclical": "สินค้าฟุ่มเฟือย/บริการ", "Industrials": "อุตสาหกรรม",
              "Utilities": "สาธารณูปโภค", "Consumer Defensive": "สินค้าจำเป็น", "Real Estate": "อสังหาริมทรัพย์",
              "Energy": "พลังงาน", "Healthcare": "การแพทย์", "Basic Materials": "วัตถุดิบ",
-             "Communication Services": "สื่อสาร", "Technology": "เทคโนโลยี"}
+             "Communication Services": "สื่อสาร", "Technology": "เทคโนโลยี",
+             # GICS (ชื่อใน us_indices.csv)
+             "Information Technology": "เทคโนโลยี", "Health Care": "การแพทย์", "Financials": "การเงิน",
+             "Consumer Discretionary": "สินค้าฟุ่มเฟือย", "Consumer Staples": "สินค้าจำเป็น", "Materials": "วัตถุดิบ"}
+
+
+def period_of(market: str) -> str:
+    return "10y" if market == "TH" else "5y"
+
+
+# ======================= บันทึกรายชื่อหุ้นเด่นรายวัน (files/signal_log/<ตลาด>_<ปี>.csv) =======================
+LOG_DIR = os.path.join(FILES, "signal_log")
+LOG_KEY = {"TH": "set100", "US": "sp500"}
+LOG_COLS = ["date", "yahoo", "symbol", "groups", "verdict", "score", "spec", "box", "dir", "mom", "mom_rank", "price"]
+
+
+def snapshot_rows(t: pd.DataFrame) -> pd.DataFrame:
+    """หุ้นที่ติดกลุ่มเด่นอย่างน้อย 1 กลุ่ม หรือได้ผลอ่าน "ซื้อ" ณ วันทำการล่าสุดของตลาด"""
+    t = t[~t["stale"]]
+    t = t[t["date"] == t["date"].max()]
+    flags = pd.DataFrame({k: rule(t).fillna(False).astype(bool) for k, _, _, rule in [MOM_GROUP] + HL_GROUPS})
+    grp = flags.apply(lambda r: "|".join(k for k in flags.columns if r[k]), axis=1)
+    keep = (grp != "") | (t["verdict"] == "ซื้อ")
+    out = t[keep].assign(groups=grp[keep])[LOG_COLS].copy()
+    out["date"] = out["date"].dt.strftime("%Y-%m-%d")
+    out["mom"] = out["mom"].round(4)
+    out["price"] = out["price"].round(4)
+    return out.sort_values(["score", "spec"], ascending=False)
+
+
+def save_snapshot(t: pd.DataFrame, market: str) -> tuple:
+    rows = snapshot_rows(t)
+    if rows.empty:
+        return None, 0
+    day = rows["date"].iloc[0]
+    os.makedirs(LOG_DIR, exist_ok=True)
+    path = os.path.join(LOG_DIR, f"{LOG_KEY[market]}_{day[:4]}.csv")
+    old = pd.read_csv(path) if os.path.exists(path) else pd.DataFrame(columns=LOG_COLS)
+    new = pd.concat([old[old["date"] != day], rows], ignore_index=True).sort_values(["date", "score"], ascending=[True, False])
+    new.to_csv(path, index=False, encoding="utf-8")
+    return day, len(rows)
+
+
+def _log_files(market: str) -> tuple:
+    if not os.path.isdir(LOG_DIR):
+        return ()
+    fs = sorted(f for f in os.listdir(LOG_DIR) if f.startswith(LOG_KEY[market] + "_") and f.endswith(".csv"))
+    return tuple((f, os.path.getmtime(os.path.join(LOG_DIR, f))) for f in fs)
+
+
+@st.cache_data(show_spinner=False)
+def _read_log(files: tuple) -> pd.DataFrame:
+    parts = [pd.read_csv(os.path.join(LOG_DIR, f)) for f, _ in files]
+    return pd.concat(parts, ignore_index=True) if parts else pd.DataFrame(columns=LOG_COLS)
+
+
+def load_log(market: str) -> pd.DataFrame:
+    return _read_log(_log_files(market))  # คีย์แคชผูกกับเวลาแก้ไขไฟล์ จึงอ่านใหม่เมื่อมีบันทึกเพิ่ม
+
+
+GROUP_ICON = {"mom": "🚀 โมเมนตัม", "strong": "💪 แข็งแกร่ง", "watch": "🌱 น่าติดตาม", "purple": "◆ กรอบม่วง",
+              "star": "★ น่าจับตา"}
+
+
+def _log_history(log: pd.DataFrame, sym: str):
+    """ประวัติการติดกลุ่มหุ้นเด่นของหุ้นตัวนี้ จากบันทึกรายวัน"""
+    h = log[log["yahoo"] == sym] if len(log) else log
+    if not len(h):
+        st.caption("📒 หุ้นตัวนี้ยังไม่มีในบันทึกรายชื่อรายวัน")
+        return
+    with st.expander(f"📒 ประวัติการติดสัญญาณจากบันทึกจริง · {h['date'].nunique()} วัน "
+                     f"(ล่าสุด {pd.to_datetime(h['date']).max():%d/%m/%Y})"):
+        v = h.sort_values("date", ascending=False)
+        st.dataframe(pd.DataFrame({
+            "วันที่": v["date"],
+            "กลุ่มที่ติด": v["groups"].fillna("").map(lambda g: " · ".join(GROUP_ICON.get(k, k) for k in str(g).split("|") if k)),
+            "ผลอ่าน": v["verdict"].map(VERDICT_ICON),
+            "คะแนน": v["score"], "Spectrum": v["spec"],
+            "โมเมนตัม 12 ด.": v["mom"] * 100, "ราคา": v["price"],
+        }), hide_index=True, use_container_width=True, height=min(35 * len(v) + 40, 300), column_config={
+            "คะแนน": st.column_config.NumberColumn(format="%+d"),
+            "โมเมนตัม 12 ด.": st.column_config.NumberColumn(format="%+.0f%%"),
+            "ราคา": st.column_config.NumberColumn(format="%.2f")})
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
-def signal_table(syms: tuple, tf: str = "D") -> pd.DataFrame:
-    px = load_prices(syms)
+def signal_table(syms: tuple, tf: str = "D", market: str = "TH", asof=None) -> pd.DataFrame:
+    """asof = None ใช้ราคาล่าสุด · ใส่วันที่ = คำนวณสัญญาณย้อนหลังจากราคาปิด ณ วันนั้น (หรือวันทำการก่อนหน้า)"""
+    px = load_prices(syms, period_of(market))
     rows = []
     for s, df in px.items():
+        if asof is not None:
+            df = df[df.index <= pd.Timestamp(asof)]
+            if len(df) < 230:
+                continue
         a = indicators(df)
         r = evaluate(a, len(df) - 1)
+        # โมเมนตัม 12-1: ผลตอบแทนรวมปันผล 12 เดือน ไม่นับเดือนล่าสุด (ผล backtest ดีกว่าสัญญาณ SOMMIT ทั้งไทยและสหรัฐ)
+        adj = df["Adj Close"].to_numpy() if "Adj Close" in df else a["c"]
+        r["mom"] = adj[-22] / adj[-253] - 1 if len(adj) >= 253 else np.nan
         if tf != "D":  # กล่องสีจากแท่งรายสัปดาห์/รายเดือน (คะแนน Spectrum ยังใช้รายวันเสมอ)
             dd = resample(df, "W-FRI" if tf == "W" else "ME")
             if len(dd) >= 3:
@@ -393,9 +544,14 @@ def signal_table(syms: tuple, tf: str = "D") -> pd.DataFrame:
     t = pd.DataFrame(rows)
     # ตัดหุ้นที่ข้อมูล Yahoo ขาดหาย (แท่งล่าสุดเก่าเกิน 7 วัน หรือมีช่วงว่างเกิน 10 วันใน 5 เดือนล่าสุด) เพื่อไม่ให้สัญญาณผิด
     t["stale"] = (t["date"] < t["date"].max() - pd.Timedelta(days=7)) | (t["gap_days"] > 10)
-    sec = load_sectors()
+    sec = load_sectors(market)
     t = t.merge(sec, on="yahoo", how="left")
-    t["mcap"] = t["price"] * t["shares"]
+    if market == "US":
+        from sector_heatmap import market_caps
+        t["mcap"] = t["yahoo"].map(market_caps(tuple(t["yahoo"])))
+    else:
+        t["mcap"] = t["price"] * t["shares"]
+    t["mom_rank"] = t["mom"].where(~t["stale"]).rank(ascending=False, method="first")
     t["symbol"] = t["yahoo"].str.replace(".BK", "", regex=False)
     t["sector_th"] = t["sector"].map(SECTOR_TH).fillna(t["sector"]).fillna("อื่นๆ")
     return t
@@ -478,8 +634,10 @@ def _spectrum_fig(t: pd.DataFrame):
     return f
 
 
-def _detail(t: pd.DataFrame, px: dict, sym: str):
+def _detail(t: pd.DataFrame, px: dict, sym: str, asof=None):
     r = t[t["yahoo"] == sym].iloc[0]
+    if asof is not None:  # ดูย้อนหลัง: ตัดกราฟถึงวันที่เลือก
+        px = {sym: px[sym][px[sym].index <= pd.Timestamp(asof)]}
     st.markdown(f"##### {r['symbol']} · {r['sector_th']} · {r.get('industry') or ''}")
     c = st.columns(5)
     c[0].metric("ผลอ่าน", VERDICT_ICON[r["verdict"]], f"คะแนนกฎ {r['score']:+d}", delta_color="off")
@@ -536,10 +694,11 @@ HL_CSS = """
 <style>
 [class*="st-key-hl_"] button{min-height:0;padding:2px 10px;border-radius:999px;font-size:.85rem;line-height:1.5}
 [class*="st-key-hl_"] button p{font-size:.85rem;font-variant-numeric:tabular-nums}
-.st-key-hl_strong button{background:rgba(27,120,55,.12);border-color:rgba(27,120,55,.55)}
-.st-key-hl_watch button{background:rgba(212,160,23,.14);border-color:rgba(212,160,23,.6)}
-.st-key-hl_purple button{background:rgba(123,44,191,.12);border-color:rgba(123,44,191,.6)}
-.st-key-hl_star button{background:rgba(42,120,214,.12);border-color:rgba(42,120,214,.55)}
+[class*="st-key-hl_strong_"] button{background:rgba(27,120,55,.12);border-color:rgba(27,120,55,.55)}
+[class*="st-key-hl_watch_"] button{background:rgba(212,160,23,.14);border-color:rgba(212,160,23,.6)}
+[class*="st-key-hl_purple_"] button{background:rgba(123,44,191,.12);border-color:rgba(123,44,191,.6)}
+[class*="st-key-hl_star_"] button{background:rgba(42,120,214,.12);border-color:rgba(42,120,214,.55)}
+[class*="st-key-hl_mom_"] button{background:rgba(230,85,13,.12);border-color:rgba(230,85,13,.6)}
 </style>
 """
 # กลุ่มเด่นตามเอกสาร SOMMIT: (คีย์, หัวข้อ, คำอธิบาย, ตัวกรอง)
@@ -555,31 +714,97 @@ HL_GROUPS = [
 ]
 
 
-def _highlights(t: pd.DataFrame):
-    """แผงหุ้นเด่นด้านบนแท็บ: กดชื่อหุ้นเพื่อดูเหตุผลและกราฟในช่องเหตุผลรายตัว"""
+MOM_GROUP = ("mom", "🚀 โมเมนตัมสูงสุด 12 เดือน (Top 20)",
+             "ผลตอบแทนรวมปันผล 12 เดือน ไม่นับเดือนล่าสุด · ผล backtest ดีกว่าสัญญาณ SOMMIT ทั้งหุ้นไทยและ S&P 500",
+             lambda t: t["mom_rank"] <= 20)
+HL_LIMIT = 40  # จำนวนชิปสูงสุดต่อกล่อง (S&P 500 มีหุ้นเข้ากลุ่มได้เป็นร้อยตัว)
+
+
+GROUP_SHORT = {"mom": "🚀", "strong": "💪", "watch": "🌱", "purple": "◆", "star": "★"}
+
+
+def _days(n, cap):
+    return f"{int(n)}+ วัน" if n >= cap else f"{int(n)} วัน"
+
+
+def _highlights(t: pd.DataFrame, p: str, groups, members: dict = None, title: str = "⭐ หุ้นเด่นวันนี้",
+                dropped: pd.DataFrame = None, cap: int = 40):
+    """แผงหุ้นเด่นด้านบนแท็บ: กดชื่อหุ้นเพื่อดูเหตุผลและกราฟในช่องเหตุผลรายตัว
+    members = {กลุ่ม: set(yahoo)} จากบันทึกรายวัน (ถ้ามี) แทนการคำนวณกฎใหม่
+    คอลัมน์ stk_<กลุ่ม> = จำนวนวันที่ติดกลุ่มต่อเนื่อง · dropped = หุ้นที่เมื่อวานอยู่ในกลุ่มแต่วันนี้หลุด"""
+    if members is not None:
+        groups = [(k, ttl, d, (lambda t, k=k: t["yahoo"].isin(members.get(k, set())))) for k, ttl, d, _ in groups]
     st.markdown(HL_CSS, unsafe_allow_html=True)
-    st.markdown("#### ⭐ หุ้นเด่นวันนี้ <span style='font-size:.8rem;color:gray;font-weight:400'>"
-                "กดชื่อหุ้นเพื่อดูเหตุผลและกราฟด้านล่าง · ตัวเลข = คะแนนกฎ · ไม่ใช่คำแนะนำซื้อขาย</span>",
+    st.markdown(f"#### {title} <span style='font-size:.8rem;color:gray;font-weight:400'>"
+                "กดชื่อหุ้นเพื่อดูเหตุผลและกราฟด้านล่าง · ตัวเลข = คะแนนกฎ (🚀 = ผลตอบแทน 12 เดือน) · ไม่ใช่คำแนะนำซื้อขาย</span>",
                 unsafe_allow_html=True)
     ss = st.session_state
     cols = st.columns(2)
-    for n, (key, title, desc, rule) in enumerate(HL_GROUPS):
-        g = t[rule(t)].sort_values(["score", "spec"], ascending=False)
+    for n, (key, title, desc, rule) in enumerate(groups):
+        g = t[rule(t)]
+        g = g.sort_values("mom_rank") if key == "mom" else g.sort_values(["score", "spec"], ascending=False)
         with cols[n % 2].container(border=True):
             st.markdown(f"**{title}** · {len(g)} ตัว")
             st.caption(desc)
             if g.empty:
                 st.caption("— ไม่มีวันนี้ —")
                 continue
-            with st.container(horizontal=True, key=f"hl_{key}", gap="small"):
-                for _, r in g.iterrows():
-                    lab = f"{r['symbol']} {r['score']:+d}" + (" 🟢" if r["verdict"] == "ซื้อ" else "")
-                    if st.button(lab, key=f"hlb_{key}_{r['symbol']}",
+            sk = f"stk_{key}"
+            if sk in g:
+                new = g[g[sk] == 1]["symbol"].tolist()
+                st.caption(("🆕 **เพิ่งเข้าวันนี้:** " + ", ".join(new)) if new else "🆕 เพิ่งเข้าวันนี้: –")
+            with st.container(horizontal=True, key=f"hl_{key}_{p}", gap="small"):
+                for _, r in g.head(HL_LIMIT).iterrows():
+                    n = r.get(sk, 0) or 0
+                    tag = ("🆕 " if n == 1 else "")
+                    days = f" · {int(n)}{'+' if n >= cap else ''}ว" if n >= 1 else ""
+                    if key == "mom":
+                        lab = f"{tag}{r['symbol']} {r['mom']:+.0%}{days}"
+                    else:
+                        lab = f"{tag}{r['symbol']} {r['score']:+d}{days}" + (" 🟢" if r["verdict"] == "ซื้อ" else "")
+                    if st.button(lab, key=f"{p}_hlb_{key}_{r['symbol']}",
                                  help=f"{BOX[r['box']][0]} {BOX[r['box']][1]} · {DIRS[r['dir']][0]} {DIRS[r['dir']][1]} · "
-                                      f"ผลอ่าน {r['verdict']} · Spectrum {r['spec']:+d} · % วันนี้ {r['chg1']:+.2%}"):
-                        ss["sig_pick"] = r["yahoo"]
+                                      f"ผลอ่าน {r['verdict']} · Spectrum {r['spec']:+d} · % วันนี้ {r['chg1']:+.2%} · "
+                                      f"โมเมนตัม 12 ด. {r['mom']:+.0%}"):
+                        ss[f"{p}_pick"] = r["yahoo"]
                         st.rerun()
-    st.caption("🟢 หลังชื่อ = ผลอ่าน \"ซื้อ\" · ผลทดสอบย้อนหลังแนะนำให้ใช้กลุ่มเหล่านี้เป็นตัวคัดกรองเบื้องต้น ไม่ใช่สัญญาณซื้อทันที")
+            if len(g) > HL_LIMIT:
+                st.caption(f"แสดง {HL_LIMIT} อันดับแรกจาก {len(g)} ตัว · ดูทั้งหมดได้ด้วยตัวกรองของตารางด้านล่าง")
+            if dropped is not None and key in dropped:
+                out = [s.replace(".BK", "") for s in dropped.index[dropped[key]]]
+                if out:
+                    st.caption("⬇️ **หลุดจากกลุ่มวันนี้:** " + ", ".join(out[:30]) + (f" และอีก {len(out) - 30} ตัว" if len(out) > 30 else ""))
+    st.caption("🆕 = เพิ่งเข้ากลุ่มวันนี้ · \"5ว\" = อยู่ในกลุ่มต่อเนื่อง 5 วันทำการ · 🟢 หลังชื่อ = ผลอ่าน \"ซื้อ\" · "
+               "ผลทดสอบย้อนหลังแนะนำให้ใช้กลุ่มเหล่านี้เป็นตัวคัดกรองเบื้องต้น ไม่ใช่สัญญาณซื้อทันที")
+
+
+def _streak_panel(h: pd.DataFrame, sym: str, cap: int):
+    """สถานะการติดกลุ่มของหุ้นตัวที่เลือก: ติดต่อเนื่องกี่วัน ตั้งแต่เมื่อไร + ไทม์ไลน์ย้อนหลัง"""
+    x = h[h["yahoo"] == sym].sort_values("date")
+    if x.empty:
+        return
+    dates = list(x["date"])
+    names = {"mom": "🚀 โมเมนตัม Top 20", "strong": "💪 แข็งแกร่ง", "watch": "🌱 น่าติดตาม", "purple": "◆ กรอบม่วง",
+             "star": "★ น่าจับตา"}
+    lines = []
+    for k in GKEYS:
+        v = x[k].astype(bool).to_numpy()
+        if v[-1]:
+            n = len(v) - (np.where(~v)[0][-1] + 1 if (~v).any() else 0)
+            since = dates[-n]
+            lines.append(f"**{names[k]}**: ติดต่อเนื่อง **{_days(n, cap)}** (ตั้งแต่ {since:%d %b %Y})"
+                         + (" · 🆕 เพิ่งเข้าวันนี้" if n == 1 else ""))
+        elif v.any():
+            last = dates[np.where(v)[0][-1]]
+            lines.append(f"{names[k]}: ไม่ติดแล้ว · ติดครั้งล่าสุด {last:%d %b %Y}")
+    st.markdown("**🗓️ ความต่อเนื่องของสัญญาณ** (" + f"{len(dates)} วันทำการล่าสุด)  \n"
+                + ("  \n".join(lines) if lines else "ไม่เคยติดกลุ่มเด่นในช่วงนี้"))
+    z = [x[k].astype(int).tolist() for k in GKEYS]
+    f = go.Figure(go.Heatmap(z=z, x=dates, y=[names[k] for k in GKEYS], colorscale=[[0, "#eef0f3"], [1, "#2e8b57"]],
+                             showscale=False, xgap=1, ygap=2, zmin=0, zmax=1,
+                             hovertemplate="%{y}<br>%{x|%d %b %Y}<extra></extra>"))
+    f.update_layout(height=190, margin=dict(l=10, r=10, t=5, b=5), yaxis=dict(autorange="reversed"))
+    st.plotly_chart(f, use_container_width=True)
 
 
 def _scroll_to(anchor_id: str):
@@ -589,49 +814,113 @@ def _scroll_to(anchor_id: str):
                     f"if(e)e.scrollIntoView({{behavior:'smooth',block:'start'}})}},300)</script>", height=0)
 
 
-def _picker_table(df: pd.DataFrame, key: str, **kw):
+def _picker_table(df: pd.DataFrame, key: str, p: str, **kw):
     """ตารางที่คลิกแถวแล้วเลือกหุ้นนั้นในช่องเหตุผลรายตัว (อยู่ในแท็บเดิม ไม่ย้ายไปแท็บกราฟ)"""
     ss = st.session_state
-    nonce = ss.get("sig_nonce", 0)
+    nonce = ss.get(f"{p}_nonce", 0)
     cfg = dict(kw.pop("column_config", {}) or {})
     cfg["yahoo"] = None
     ev = st.dataframe(df, key=f"{key}_{nonce}", on_select="rerun", selection_mode="single-row",
                       hide_index=True, column_config=cfg, **kw)
     rows = ev.selection.rows if ev is not None else []
     if rows:
-        ss["sig_pick"] = df.iloc[rows[0]]["yahoo"]
-        ss["sig_scroll"] = True
-        ss["sig_nonce"] = nonce + 1
+        ss[f"{p}_pick"] = df.iloc[rows[0]]["yahoo"]
+        ss[f"{p}_scroll"] = True
+        ss[f"{p}_nonce"] = nonce + 1
         st.rerun()
 
 
-def render_signals_tab(set100: pd.DataFrame, clickable_table=None):
+FILTERS = ["ทั้งหมด", "🆕 เพิ่งเข้ากลุ่มเด่น (ไม่เกิน 3 วัน)", "🚀 Top 20 โมเมนตัม", "💪 หุ้นแข็งแกร่ง", "🌱 หุ้นน่าติดตาม (กำลังฟื้น)", "◆ กรอบม่วง",
+           "★ หุ้นน่าจับตา", "ซื้อ / ถือ", "บวกวันนี้", "ลบวันนี้"]
+SORTS = ["คำแนะนำการลงทุน (กล่องสี)", "สถานะทางเทคนิค (คะแนนกฎ มาก→น้อย)", "ทิศทาง (▲ ก่อน)", "Spectrum (มาก→น้อย)",
+         "โมเมนตัม 12 เดือน (มาก→น้อย)"]
+
+
+MARKETS = {"TH": "🇹🇭 SET100", "US": "🇺🇸 S&P 500"}
+
+
+def render_signals_hub(set100: pd.DataFrame, us: pd.DataFrame):
+    """แท็บเดียวรวม 2 ตลาด · เลือกตลาดก่อน แล้วค่อยคำนวณเฉพาะตลาดนั้น (ไม่โหลดหุ้น 600 ตัวพร้อมกัน)"""
+    mk = st.segmented_control("ตลาด", list(MARKETS), format_func=MARKETS.get, default="TH", key="sig_market",
+                              label_visibility="collapsed")
+    mk = mk or "TH"
+    if mk == "TH":
+        render_signals_tab(set100, market="TH")
+    else:
+        render_signals_tab(us[us["sp500"] == 1], market="US")
+
+
+def _date_picker(p: str, market: str):
+    """📅 ดูสัญญาณ ณ วันที่ · คืน None เมื่อเป็นวันนี้ (ใช้ราคาล่าสุด)"""
     ss = st.session_state
-    if "sig_pick" in ss:  # หุ้นที่คลิกมาจากแผงหุ้นเด่น/ตาราง/Spectrum -> ตั้งค่าก่อนสร้าง selectbox
-        ss["sig_detail"] = ss.pop("sig_pick")
-    syms = tuple(set100["yahoo"])
-    star = dict(zip(set100["yahoo"], set100["set50"])) if "set50" in set100 else {}
+    today = dt.date.today()
+    lo = today - dt.timedelta(days=365 * (5 if market == "TH" else 3))
+    log = load_log(market)
+    logged = sorted(pd.to_datetime(log["date"]).dt.date.unique()) if len(log) else []
+    if not isinstance(ss.get(f"{p}_asof"), dt.date):
+        ss[f"{p}_asof"] = today
+    c1, c2 = st.columns([1.3, 3])
+    d = c1.date_input("📅 ดูสัญญาณ ณ วันที่", min_value=lo, max_value=today, key=f"{p}_asof", format="DD/MM/YYYY",
+                      help="เลือกวันในอดีตเพื่อดูว่าวันนั้นหุ้นตัวไหนติดสัญญาณ · วันหยุดจะใช้ราคาปิดวันทำการก่อนหน้า")
+    if logged:
+        c2.caption(f"📒 มีบันทึกรายชื่อจริง {len(logged)} วัน ({logged[0]:%d/%m/%Y} – {logged[-1]:%d/%m/%Y}) · "
+                   "วันอื่นจะคำนวณย้อนหลังจากราคาในอดีต")
+    else:
+        c2.caption("📒 ยังไม่มีบันทึกรายชื่อจริง (GitHub Actions จะเริ่มบันทึกทุกวันทำการ) · วันในอดีตจะคำนวณย้อนหลังจากราคา")
+    return None if d >= today else d, log
+
+
+def render_signals_tab(universe: pd.DataFrame, clickable_table=None, market: str = "TH"):
+    """สัญญาณเทคนิคของตลาดเดียว · market="TH" (SET100) หรือ "US" (S&P 500) · คีย์ session แยกกันตามตลาด"""
+    p = "sig" if market == "TH" else "usig"
+    ss = st.session_state
+    if f"{p}_pick" in ss:  # หุ้นที่คลิกมาจากแผงหุ้นเด่น/ตาราง/Spectrum -> ตั้งค่าก่อนสร้าง selectbox
+        ss[f"{p}_detail"] = ss.pop(f"{p}_pick")
+    syms = tuple(universe["yahoo"])
+    star = dict(zip(universe["yahoo"], universe["set50"])) if "set50" in universe else {}
+    asof, log = _date_picker(p, market)
     o1, o2, o3 = st.columns([1.2, 1.6, 1.4])
-    tf = o1.radio("กล่องสีคำนวณจากแท่ง", ["D", "W", "M"], horizontal=True, key="sig_tf",
+    tf = o1.radio("กล่องสีคำนวณจากแท่ง", ["D", "W", "M"], horizontal=True, key=f"{p}_tf",
                   format_func={"D": "รายวัน", "W": "1W", "M": "1M"}.get,
                   help="1W/1M เปลี่ยนเฉพาะกล่องสีในตาราง · คะแนนกฎและ Spectrum คำนวณจากแท่งรายวันเสมอ")
-    sort = o2.selectbox("เรียงตาม", ["คำแนะนำการลงทุน (กล่องสี)", "สถานะทางเทคนิค (คะแนนกฎ มาก→น้อย)",
-                                     "ทิศทาง (▲ ก่อน)", "Spectrum (มาก→น้อย)"], key="sig_sort")
-    flt = o3.selectbox("กรอง", ["ทั้งหมด", "💪 หุ้นแข็งแกร่ง", "🌱 หุ้นน่าติดตาม (กำลังฟื้น)", "◆ กรอบม่วง",
-                                "★ หุ้นน่าจับตา", "ซื้อ / ถือ", "บวกวันนี้", "ลบวันนี้"],
-                       key="sig_flt")
-    t = signal_table(syms, tf)
+    sort = o2.selectbox("เรียงตาม", SORTS, key=f"{p}_sort", index=4 if market == "US" else 0)
+    flt = o3.selectbox("กรอง", FILTERS, key=f"{p}_flt")
+    with st.spinner("กำลังคำนวณสัญญาณ ..."):
+        t = signal_table(syms, tf, market, asof)
     if t.empty:
-        st.warning("ดึงราคาไม่สำเร็จ ลองใหม่อีกครั้ง")
+        st.warning("ไม่มีข้อมูลราคาพอสำหรับวันที่เลือก")
         return
     stale = t[t["stale"]]
     if len(stale):
-        st.warning("ไม่แสดง " + ", ".join(f"{r.symbol} (ข้อมูลขาดช่วง {r.gap_days} วัน)" for r in stale.itertuples())
-                   + " เพราะราคาย้อนหลังจาก Yahoo ไม่ครบ สัญญาณจะคลาดเคลื่อน")
+        last = t["date"].max()
+        st.warning("ไม่แสดง " + ", ".join(
+            f"{r.symbol} (" + (f"ไม่มีราคาตั้งแต่ {r.date:%d %b %Y}" if r.date < last - pd.Timedelta(days=7)
+                               else f"ข้อมูลขาดช่วง {r.gap_days} วัน") + ")" for r in stale.itertuples())
+            + " เพราะราคาย้อนหลังจาก Yahoo ไม่ครบ สัญญาณจะคลาดเคลื่อน")
         t = t[~t["stale"]]
-    asof = t["date"].max()
-    st.caption(f"ข้อมูลถึง {asof:%d %b %Y} · {len(t)} หุ้น · คำนวณจาก Yahoo Finance (ราคาจริง ไม่ปรับปันผล เหมือน set.or.th) · "
-               "คลิกชื่อหุ้น แถวในตาราง หรือช่องใน Spectrum เพื่อดูเหตุผลและกราฟในช่อง 🔍 เหตุผลรายตัว")
+    day = t["date"].max()
+    src = "ราคาจริง ไม่ปรับปันผล เหมือน set.or.th" if market == "TH" else "ราคาจริง ไม่ปรับปันผล"
+    # บันทึกจริงของวันนั้น (ถ้ามี) -> ใช้รายชื่อหุ้นเด่นจากบันทึก ไม่คำนวณกฎใหม่
+    L = log[log["date"] == f"{day:%Y-%m-%d}"] if len(log) else log
+    members = None
+    if len(L):
+        members = {}
+        for y, g in zip(L["yahoo"], L["groups"].fillna("")):
+            for k in str(g).split("|"):
+                if k:
+                    members.setdefault(k, set()).add(y)
+    if asof is None:
+        st.caption(f"ข้อมูลถึง {day:%d %b %Y} · {len(t)} หุ้น · คำนวณจาก Yahoo Finance ({src}) · "
+                   "คลิกชื่อหุ้น แถวในตาราง หรือช่องใน Spectrum เพื่อดูเหตุผลและกราฟในช่อง 🔍 เหตุผลรายตัว")
+    elif members is not None:
+        st.success(f"📒 **ย้อนดูวันที่ {day:%d %b %Y}** · แผงหุ้นเด่นแสดงจาก **บันทึกจริงของวันนั้น** · "
+                   "ตาราง กราฟ และเหตุผลรายตัว คำนวณย้อนหลังจากราคา ณ วันนั้น")
+    else:
+        st.info(f"🧮 **ย้อนดูวันที่ {day:%d %b %Y}** (คำนวณย้อนหลังจากราคาปิด ณ วันนั้น · ไม่มีบันทึกจริงของวันนี้) · "
+                "อาจต่างจากที่เคยแสดงจริงเล็กน้อย เพราะใช้รายชื่อหุ้นในดัชนีปัจจุบัน")
+    if market == "US":
+        st.warning("⚠️ ผล backtest ปี 2014–2026: กฎแบบ SOMMIT **ใช้กับหุ้น S&P 500 ไม่ได้ผล** (หุ้นที่ได้ \"ซื้อ\" แพ้ตลาด, "
+                   "\"ขาย\" กลับชนะตลาด) · ตัวที่ได้ผลดีกว่าคือ 🚀 โมเมนตัม 12 เดือน · รายละเอียดในแท็บย่อย 🧪 ทดสอบย้อนหลัง")
 
     vc = t["verdict"].value_counts()
     m = st.columns(7)
@@ -640,26 +929,50 @@ def render_signals_tab(set100: pd.DataFrame, clickable_table=None):
     m[5].metric("◆ กรอบม่วง", int(t["purple"].sum()))
     m[6].metric("★ น่าจับตา", int(t["watch"].sum()))
 
-    _highlights(t)
+    # ----- ความต่อเนื่อง: ติดกลุ่มมากี่วัน / เพิ่งเข้า / หลุด (คำนวณย้อนหลัง n วันทำการ) -----
+    cap = 60 if market == "TH" else 40
+    with st.spinner("กำลังนับวันที่หุ้นติดกลุ่มต่อเนื่อง ..."):
+        h = membership_history(syms, market, asof, cap)
+    dropped = None
+    if len(h):
+        stk, dropped, _ = streak_table(h)
+        t = t.merge(stk.add_prefix("stk_"), left_on="yahoo", right_index=True, how="left")
+        for k in GKEYS:
+            t[f"stk_{k}"] = t[f"stk_{k}"].fillna(0).astype(int)
+    else:
+        for k in GKEYS:
+            t[f"stk_{k}"] = 0
 
-    # ----- เหตุผลรายตัว + กราฟ (ต่อจากหุ้นเด่นวันนี้) -----
-    st.markdown("<div id='sig-detail'></div>", unsafe_allow_html=True)
-    st.markdown("#### 🔍 เหตุผลรายตัว")
+    groups = ([MOM_GROUP] if market == "US" else []) + HL_GROUPS + ([MOM_GROUP] if market == "TH" else [])
+    _highlights(t, p, groups, members,
+                "⭐ หุ้นเด่นวันนี้" if asof is None else f"⭐ หุ้นเด่น ณ {day:%d %b %Y}", dropped, cap)
+
+    # ----- เหตุผลรายตัว + กราฟ (ต่อจากหุ้นเด่น) -----
+    st.markdown(f"<div id='{p}-detail'></div>", unsafe_allow_html=True)
+    st.markdown("#### 🔍 เหตุผลรายตัว" + ("" if asof is None else f" ณ {day:%d %b %Y}"))
     opts = sorted(t["yahoo"])
-    if ss.get("sig_detail") not in opts:
-        hl = t[t["box"].isin(["G", "B"])].sort_values(["score", "spec"], ascending=False)
-        ss["sig_detail"] = hl["yahoo"].iloc[0] if len(hl) else opts[0]
+    names = dict(zip(t["yahoo"], t["industry"])) if market == "US" else {}
+    if ss.get(f"{p}_detail") not in opts:
+        hl = t.sort_values("mom_rank") if market == "US" else \
+            t[t["box"].isin(["G", "B"])].sort_values(["score", "spec"], ascending=False)
+        ss[f"{p}_detail"] = hl["yahoo"].iloc[0] if len(hl) else opts[0]
     d1, d2 = st.columns([2, 1])
-    sym = d1.selectbox("เลือกหุ้น (หรือคลิกชื่อหุ้นจากแผงด้านบน / ตาราง / Spectrum)", opts, key="sig_detail",
-                       format_func=lambda s: s.replace(".BK", ""))
+    sym = d1.selectbox("เลือกหุ้น (หรือคลิกชื่อหุ้นจากแผงด้านบน / ตาราง / Spectrum)", opts, key=f"{p}_detail",
+                       format_func=lambda s: s.replace(".BK", "") + (f" — {names[s]}" if s in names else ""))
     d2.markdown("<div style='height:1.8rem'></div>", unsafe_allow_html=True)
-    if d2.button("📈 เปิดในแท็บกราฟราคา (เต็มจอ)", key="sig_open_chart"):
+    if d2.button("📈 เปิดในแท็บกราฟราคา (เต็มจอ)", key=f"{p}_open_chart"):
         ss["goto_sym"] = sym
         st.rerun()
     with st.container(border=True):
-        _detail(t, load_prices(syms), sym)
-    if ss.pop("sig_scroll", False):
-        _scroll_to("sig-detail")
+        r0 = t[t["yahoo"] == sym].iloc[0]
+        if pd.notna(r0["mom"]):
+            st.caption(f"🚀 โมเมนตัม 12 เดือน: {r0['mom']:+.1%} · อันดับ {int(r0['mom_rank'])} จาก {int(t['mom_rank'].max())}")
+        _detail(t, load_prices(syms, period_of(market)), sym, asof)
+        if len(h):
+            _streak_panel(h, sym, cap)
+        _log_history(log, sym)
+    if ss.pop(f"{p}_scroll", False):
+        _scroll_to(f"{p}-detail")
 
     tab_a, tab_b, tab_c = st.tabs(["📋 ตารางสัญญาณรายตัว", "🌈 Market Lens: Signal Spectrum", "🧪 ทดสอบย้อนหลัง & วิธีคิด"])
     with tab_a:
@@ -678,12 +991,19 @@ def render_signals_tab(set100: pd.DataFrame, clickable_table=None):
             v = v[v["box"].isin(["G", "B"])]
         elif flt.startswith("🌱"):
             v = v[v["box"].isin(["EYE", "RG"])]
+        elif flt.startswith("🚀"):
+            v = v[v["mom_rank"] <= 20]
+        elif flt.startswith("🆕"):
+            s = v[[f"stk_{k}" for k in GKEYS]]
+            v = v[((s >= 1) & (s <= 3)).any(axis=1)]
         if sort.startswith("คำแนะนำ"):
             v = v.assign(_k=v["box_tf"].map(lambda b: BOX[b][2])).sort_values(["_k", "symbol"])
         elif sort.startswith("สถานะ"):
             v = v.sort_values(["score", "spec"], ascending=False)
         elif sort.startswith("ทิศทาง"):
             v = v.assign(_k=v["dir"].map(lambda d: DIRS[d][4])).sort_values(["_k", "dir_tot"], ascending=[True, False])
+        elif sort.startswith("โมเมนตัม"):
+            v = v.sort_values("mom_rank")
         else:
             v = v.sort_values("spec", ascending=False)
         tbl = pd.DataFrame({
@@ -692,6 +1012,7 @@ def render_signals_tab(set100: pd.DataFrame, clickable_table=None):
             "กลุ่ม": v["sector_th"],
             "ราคา": v["price"],
             "% วันนี้": v["chg1"] * 100,
+            "โมเมนตัม 12 ด.": v["mom"] * 100,
             "กล่องสี": v["box_tf"].map(lambda b: BOX[b][0]),
             "ระดับ EMA": v["lvl_tf"].map(LEVELS) + v["near200"].map(lambda x: " ⚠️" if x else ""),
             "ทิศทาง": v["dir"].map(lambda d: f"{DIRS[d][0]} {DIRS[d][1]}"),
@@ -700,31 +1021,37 @@ def render_signals_tab(set100: pd.DataFrame, clickable_table=None):
             "คะแนน": v["score"],
             "ผลอ่าน": v["verdict"].map(VERDICT_ICON),
             "Spectrum": v["spec"],
-            "พิเศษ": (v["purple"].map(lambda x: "◆ " if x else "") + v["white"].map(lambda x: "▣ " if x else "")
-                      + v["watch"].map(lambda x: "★" if x else "")),
+            "พิเศษ": (v["mom_rank"].map(lambda x: "🚀 " if x <= 20 else "") + v["purple"].map(lambda x: "◆ " if x else "")
+                      + v["white"].map(lambda x: "▣ " if x else "") + v["watch"].map(lambda x: "★" if x else "")),
+            "ติดกลุ่มต่อเนื่อง": [" ".join(("🆕" if r[f"stk_{k}"] == 1 else "") + f"{GROUP_SHORT[k]}{r[f'stk_{k}']}ว"
+                                           for k in GKEYS if r[f"stk_{k}"] > 0) for _, r in v.iterrows()],
         })
-        _picker_table(tbl, "sig_tbl", use_container_width=True, height=560, column_config={
+        if market == "US":
+            tbl.insert(2, "บริษัท", v["industry"])
+        _picker_table(tbl, f"{p}_tbl", p, use_container_width=True, height=560, column_config={
             "ราคา": st.column_config.NumberColumn(format="%.2f"),
             "% วันนี้": st.column_config.NumberColumn(format="%+.2f%%"),
+            "โมเมนตัม 12 ด.": st.column_config.NumberColumn(format="%+.0f%%"),
             "คะแนน": st.column_config.NumberColumn(format="%+d"),
             "Spectrum": st.column_config.ProgressColumn(min_value=-100, max_value=100, format="%+d"),
         })
-        st.caption("คลิกแถวเพื่อดูเหตุผลและกราฟในช่อง 🔍 เหตุผลรายตัวด้านบน · ★ หลังชื่อ = SET50 · "
-                   "⚠️ = ราคาห่าง EMA200 ไม่ถึง 2% · พิเศษ: ◆ กรอบม่วง · ▣ Spectrum ≥ +75 · ★ หุ้นน่าจับตา")
+        st.caption("คลิกแถวเพื่อดูเหตุผลและกราฟในช่อง 🔍 เหตุผลรายตัวด้านบน · "
+                   + ("★ หลังชื่อ = SET50 · " if market == "TH" else "")
+                   + "⚠️ = ราคาห่าง EMA200 ไม่ถึง 2% · พิเศษ: 🚀 Top 20 โมเมนตัม · ◆ กรอบม่วง · ▣ Spectrum ≥ +75 · ★ หุ้นน่าจับตา")
 
     with tab_b:
-        st.caption("แต่ละแถว = กลุ่มอุตสาหกรรม (Yahoo) เรียงจากคะแนนเฉลี่ยถ่วง market cap สูงสุด (ตัวเลขท้ายแถว) · "
+        st.caption("แต่ละแถว = กลุ่มอุตสาหกรรม เรียงจากคะแนนเฉลี่ยถ่วง market cap สูงสุด (ตัวเลขท้ายแถว) · "
                    "ในแถวเรียงจากคะแนนต่ำ (ซ้าย แดง) ไปสูง (ขวา เขียว) · ความกว้าง ∝ √market cap · สีเข้มสุดที่ ±70 · "
                    "กรอบม่วงหนา ◆ = กรอบม่วง · กรอบดำ = Spectrum ≥ +75 (ต้นฉบับใช้กรอบขาว) · ★ = หุ้นน่าจับตา")
-        nonce = ss.get("tbl_nonce", 0)
+        nonce = ss.get(f"{p}_spec_nonce", 0)
         ev = st.plotly_chart(_spectrum_fig(t), use_container_width=True, on_select="rerun",
-                             selection_mode="points", key=f"sig_spec_{nonce}")
+                             selection_mode="points", key=f"{p}_spec_{nonce}")
         pts = ev.selection.points if ev is not None and ev.selection else []
         if pts and pts[0].get("customdata"):
             cdv = pts[0]["customdata"]
-            ss["sig_pick"] = cdv[0] if isinstance(cdv, (list, tuple)) else cdv
-            ss["sig_scroll"] = True
-            ss["tbl_nonce"] = nonce + 1
+            ss[f"{p}_pick"] = cdv[0] if isinstance(cdv, (list, tuple)) else cdv
+            ss[f"{p}_scroll"] = True
+            ss[f"{p}_spec_nonce"] = nonce + 1
             st.rerun()
         top = t.sort_values("spec", ascending=False)
         a1, a2 = st.columns(2)
@@ -733,13 +1060,49 @@ def render_signals_tab(set100: pd.DataFrame, clickable_table=None):
         a2.markdown("**★ หุ้นน่าจับตา:** " + (", ".join(top[top["watch"]]["symbol"]) or "ไม่มีวันนี้"))
 
     with tab_c:
-        if BT_INFO:
-            st.markdown(BT_INFO)
-        if not BT_TABLE.empty:
-            st.dataframe(BT_TABLE, hide_index=True, use_container_width=True, column_config=BT_CFG)
-            st.caption("ช่วงปี = ชนะตลาด 3 เดือนเฉลี่ยในช่วงนั้น · ⚠️ ข้อมูลเพื่อการศึกษา ไม่ใช่คำแนะนำซื้อขาย")
+        if market == "US":
+            st.markdown(BT_US)
+        else:
+            if BT_INFO:
+                st.markdown(BT_INFO)
+            if not BT_TABLE.empty:
+                st.dataframe(BT_TABLE, hide_index=True, use_container_width=True, column_config=BT_CFG)
+                st.caption("ช่วงปี = ชนะตลาด 3 เดือนเฉลี่ยในช่วงนั้น · ⚠️ ข้อมูลเพื่อการศึกษา ไม่ใช่คำแนะนำซื้อขาย")
         with st.expander("📘 กติกาทั้ง 4 ชั้น และจุดที่ตีความเพิ่ม"):
             st.markdown(RULES_MD)
+
+
+# ผล backtest S&P 500 (รันออฟไลน์ด้วย evaluate() ชุดเดียวกัน · หุ้นในดัชนีปัจจุบัน 498 ตัว · ประเมินทุกสิ้นเดือน ม.ค. 2014 – ต.ค. 2026)
+BT_US = """
+**ผลทดสอบย้อนหลังกับหุ้น S&P 500: กฎแบบ SOMMIT ใช้ได้ไหม**
+
+หุ้นในดัชนี S&P 500 ปัจจุบัน 498 ตัว · ประเมินทุกสิ้นเดือน ม.ค. 2014 – ต.ค. 2026 · ปรับพอร์ตทุกเดือน · หักค่าซื้อขายฝั่งละ 0.1%
+
+| กลยุทธ์ | ผลตอบแทน/ปี | ขาดทุนสูงสุด | Sharpe | 2014–17 | 2018–21 | 2022–26 |
+|---|---|---|---|---|---|---|
+| SPY (ถ่วงตามขนาด) | 13.1% | −24% | 0.93 | 14.4% | 14.4% | 12.0% |
+| ถือทุกตัวเท่ากัน (ฐานเทียบ) | 16.2% | −24% | 1.05 | 18.6% | 17.6% | 13.8% |
+| ตัด "ไม่ซื้อ/ขาย" ออก | 14.3% | −22% | 1.00 | 16.3% | 16.1% | 11.8% |
+| 💪 หุ้นแข็งแกร่ง (กล่อง ✓) | 12.7% | −18% | 0.94 | 13.5% | 14.8% | 11.1% |
+| Top 50 Spectrum | 10.6% | −20% | 0.75 | 9.0% | 13.7% | 10.0% |
+| ◆ กรอบม่วงทุกตัว | 10.1% | −26% | 0.56 | 12.4% | 6.3% | 12.4% |
+| **Top 50 โมเมนตัม 12 เดือน** | **22.1%** | −21% | 1.06 | 17.5% | 19.4% | 28.2% |
+| โมเมนตัม + ไม่เอากล่อง ✕ | 21.5% | −21% | **1.12** | 17.4% | 20.9% | 24.9% |
+
+| กลุ่ม (ชนะค่าเฉลี่ยทุกหุ้นใน 3 เดือนถัดไป) | ชนะตลาด 3 เดือน | % ครั้งที่ชนะ (ฐาน 48%) |
+|---|---|---|
+| ผลอ่าน "ซื้อ" | −0.23% | 46% |
+| ผลอ่าน "ขาย / ลดสถานะ" | +0.58% | 50% |
+| Spectrum ≥ +40 | −0.17% | 47% |
+| Spectrum ≤ −40 | +0.21% | 49% |
+| 🌱 หุ้นน่าติดตาม | −0.49% | 46% |
+
+- **สัญญาณ SOMMIT กลับทางในหุ้นใหญ่สหรัฐ:** หุ้นที่ได้ "ขาย" กลับชนะตลาด หุ้นที่ได้ "ซื้อ" แพ้ตลาด (หุ้นใหญ่สหรัฐมักเด้งกลับในระยะสั้น)
+- **ทุกพอร์ตที่ใช้สัญญาณ SOMMIT แพ้การถือทุกตัวเท่ากัน** ข้อดีเดียวคือกลุ่มหุ้นแข็งแกร่งขาดทุนสูงสุดน้อยกว่า
+- **🚀 โมเมนตัม 12 เดือนดีที่สุด** เหมือนผลกับหุ้นไทย · ตัวกรองตลาดขาขึ้นใช้ไม่ได้กับสหรัฐ (ผลตอบแทนหายเกือบครึ่ง)
+- ⚠️ ใช้รายชื่อหุ้นในดัชนีปัจจุบัน หุ้นที่ขึ้นแรงจนถูกเพิ่มเข้าดัชนีภายหลังอยู่ในชุดตั้งแต่ปี 2014 ตัวเลขโมเมนตัมจึงสูงเกินจริง ·
+  ข้อมูลเพื่อการศึกษา ไม่ใช่คำแนะนำการลงทุน
+"""
 
 
 RULES_MD = """

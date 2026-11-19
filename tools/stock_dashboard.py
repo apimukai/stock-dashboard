@@ -22,7 +22,7 @@ from world_markets import load_world, get_world, render_world, flag_url
 from index_fundamentals import render_index_fundamentals
 from sector_heatmap import render_sector_heatmap, clickable_table
 from history_backtest import render_history_tab
-from set_signals import render_signals_tab
+from set_signals import render_signals_hub
 
 st.set_page_config(page_title="Stock Dashboard", page_icon="📈", layout="wide")
 
@@ -289,7 +289,7 @@ names.update({r.yahoo: r.name for r in us.itertuples()})
 names.update({r.yahoo: f"{r.country} · {r.index_name}" for r in world.itertuples()})
 
 TAB_CARDS, TAB_OVERVIEW, TAB_SIG, TAB_SECTOR, TAB_HIST, TAB_FUND, TAB_CHART, TAB_COMPARE = (
-    "💳 การ์ดราคาหุ้น", "🗺️ ภาพรวมตลาด", "🧭 สัญญาณเทคนิค SET100", "🔥 US Sector Heatmap", "⏪ ย้อนหลัง & Backtest", "🔎 ข้อมูลพื้นฐาน",
+    "💳 การ์ดราคาหุ้น", "🗺️ ภาพรวมตลาด", "🧭 สัญญาณเทคนิค (SET100 · S&P 500)", "🔥 US Sector Heatmap", "⏪ ย้อนหลัง & Backtest", "🔎 ข้อมูลพื้นฐาน",
     "📈 กราฟราคา", "📊 เปรียบเทียบผลตอบแทน")
 
 # หุ้นที่เลือก (sel_sym) ใช้ร่วมกันระหว่างแท็บข้อมูลพื้นฐานกับแท็บกราฟ
@@ -476,10 +476,10 @@ def overview_tab():
 with tab3:
     overview_tab()
 
-# ---------------- สัญญาณเทคนิค SET100 ----------------
+# ---------------- สัญญาณเทคนิค (SET100 · S&P 500 ในแท็บเดียว เลือกตลาดด้านใน) ----------------
 with tab_sig:
     if getattr(tab_sig, "open", True):
-        render_signals_tab(set100, clickable_table)
+        render_signals_hub(set100, us)
 
 # ---------------- US sector heatmap ----------------
 with tab_sec:
