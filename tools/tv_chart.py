@@ -242,8 +242,13 @@ def lw_chart(df: pd.DataFrame, ma=(10, 50, 200), ma_kind: str = "SMA", events: p
                           "line": line, "intraday": intraday, "bg": bg, "fg": fg, "grid": grid, "h": height,
                           "vis": int(visible_bars)})
     html = f"""
+<style>html,body{{margin:0;background:{bg}}}
+#fs{{position:absolute;right:62px;top:4px;z-index:4;font-size:12px;padding:2px 8px;border-radius:6px;cursor:pointer;
+     border:1px solid rgba(128,128,128,.45);background:{bg};color:{fg};opacity:.85}}
+#fs:hover{{opacity:1}}</style>
 <div id="lwwrap" style="position:relative;font-family:sans-serif">
   <div id="legend" style="position:absolute;left:8px;top:6px;z-index:3;font-size:12px;color:{fg};pointer-events:none"></div>
+  <button id="fs" title="เปิดกราฟเต็มจอ (กด Esc เพื่อออก)">⛶ เต็มจอ</button>
   <div id="lw"></div>
 </div>
 <script src="{LW_JS}"></script>
@@ -294,6 +299,26 @@ function show(p) {{
 }}
 show(null);
 chart.subscribeCrosshairMove(show);
+// ---- เต็มจอ: ขยายกรอบ iframe ของกราฟ (หน้าเว็บกับกราฟอยู่ origin เดียวกัน) · Esc เพื่อออก ----
+const fsBtn = document.getElementById('fs');
+const pdoc = (() => {{ try {{ return window.parent.document; }} catch (e) {{ return null; }} }})();
+const isFull = () => !!((pdoc && pdoc.fullscreenElement === window.frameElement) || document.fullscreenElement);
+function fit() {{
+  const full = isFull();
+  chart.applyOptions({{ width: el.clientWidth, height: full ? Math.max(300, window.innerHeight - 8) : P.h }});
+  fsBtn.textContent = full ? '✕ ออกจากเต็มจอ' : '⛶ เต็มจอ';
+}}
+fsBtn.onclick = async () => {{
+  try {{
+    if (isFull()) {{ await (pdoc && pdoc.fullscreenElement ? pdoc.exitFullscreen() : document.exitFullscreen()); }}
+    else {{
+      try {{ await window.frameElement.requestFullscreen(); }}          // ขยายทั้งกรอบกราฟ
+      catch (e1) {{ await document.documentElement.requestFullscreen(); }} // สำรอง: เต็มจอจากในกรอบเอง
+    }}
+  }} catch (e) {{ fsBtn.textContent = 'เบราว์เซอร์ไม่อนุญาตเต็มจอ'; return; }}
+  setTimeout(fit, 150);
+}};
+window.addEventListener('resize', () => setTimeout(fit, 50));
 new ResizeObserver(() => chart.applyOptions({{ width: el.clientWidth }})).observe(el);
 </script>"""
     components.html(html, height=height + 8)
@@ -334,18 +359,43 @@ def tv_widget(sym: str, height: int = 680, interval: str = "D"):
                 "กดปุ่มด้านบนเพื่อเปิดกราฟเต็มรูปแบบบน tradingview.com · หรือใช้มุมมอง ⚡ กราฟเร็ว + สัญญาณ")
         return
     bg, _, _ = _theme()
-    cfg = {"autosize": False, "width": "100%", "height": height - 40,
-           "symbol": tv_symbol(sym), "interval": interval, "timezone": "Asia/Bangkok",
+    _, fg, _ = _theme()
+    # autosize = กราฟขยายเต็มกรอบ จึงโตตามเมื่อกดเต็มจอ (html/body ต้องสูง 100% ไม่งั้นวิดเจ็ตเตี้ย)
+    cfg = {"autosize": True, "symbol": tv_symbol(sym), "interval": interval, "timezone": "Asia/Bangkok",
            "theme": "dark" if bg != "#ffffff" else "light", "style": "1", "locale": "th_TH",
            "allow_symbol_change": True, "hide_side_toolbar": False, "withdateranges": True, "details": False,
            "support_host": "https://www.tradingview.com"}
     html = f"""
-<div class="tradingview-widget-container" style="width:100%">
+<style>html,body{{height:100%;margin:0;background:{bg};font-family:sans-serif}}
+#bar{{height:30px;display:flex;align-items:center;justify-content:flex-end;gap:10px;font-size:11px}}
+#bar a{{color:{fg};opacity:.7}}
+#fs{{font-size:12px;padding:2px 8px;border-radius:6px;cursor:pointer;border:1px solid rgba(128,128,128,.45);
+     background:{bg};color:{fg}}}
+.tradingview-widget-container{{height:calc(100% - 32px);width:100%}}
+.tradingview-widget-container__widget{{height:100%;width:100%}}</style>
+<div id="bar">
+  <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">Chart by TradingView</a>
+  <button id="fs" title="เปิดกราฟเต็มจอ (กด Esc เพื่อออก)">⛶ เต็มจอ</button>
+</div>
+<div class="tradingview-widget-container">
   <div class="tradingview-widget-container__widget"></div>
-  <div class="tradingview-widget-copyright" style="font-size:11px">
-    <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">Chart by TradingView</a></div>
   <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
   {json.dumps(cfg)}
   </script>
-</div>"""
+</div>
+<script>
+const fsBtn = document.getElementById('fs');
+const pdoc = (() => {{ try {{ return window.parent.document; }} catch (e) {{ return null; }} }})();
+const isFull = () => !!((pdoc && pdoc.fullscreenElement === window.frameElement) || document.fullscreenElement);
+fsBtn.onclick = async () => {{
+  try {{
+    if (isFull()) {{ await (pdoc && pdoc.fullscreenElement ? pdoc.exitFullscreen() : document.exitFullscreen()); }}
+    else {{
+      try {{ await window.frameElement.requestFullscreen(); }}          // ขยายทั้งกรอบกราฟ
+      catch (e1) {{ await document.documentElement.requestFullscreen(); }} // สำรอง: เต็มจอจากในกรอบเอง
+    }}
+  }} catch (e) {{ fsBtn.textContent = 'เบราว์เซอร์ไม่อนุญาตเต็มจอ'; return; }}
+}};
+window.addEventListener('resize', () => {{ fsBtn.textContent = isFull() ? '✕ ออกจากเต็มจอ' : '⛶ เต็มจอ'; }});
+</script>"""
     components.html(html, height=height + 10)
