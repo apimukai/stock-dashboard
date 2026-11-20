@@ -255,8 +255,12 @@ def lw_chart(df: pd.DataFrame, ma=(10, 50, 200), ma_kind: str = "SMA", events: p
 <script>
 const P = {payload};
 const el = document.getElementById('lw');
+// จอมือถือ (กว้าง ≤ 640px): กราฟเตี้ยลง และย่อกรอบตามไม่ให้เหลือที่ว่าง
+const isSmall = () => {{ try {{ return window.parent.innerWidth <= 640; }} catch (e) {{ return window.innerWidth <= 640; }} }};
+const hOf = () => isSmall() ? Math.max(260, Math.round(P.h * 0.65)) : P.h;
+let H = hOf();
 const chart = LightweightCharts.createChart(el, {{
-  height: P.h, width: el.clientWidth || 900,
+  height: H, width: el.clientWidth || 900,
   layout: {{ background: {{ type: 'solid', color: P.bg }}, textColor: P.fg }},
   grid: {{ vertLines: {{ color: P.grid }}, horzLines: {{ color: P.grid }} }},
   rightPriceScale: {{ borderVisible: false }},
@@ -301,11 +305,19 @@ show(null);
 chart.subscribeCrosshairMove(show);
 // ---- เต็มจอ: ขยายกรอบ iframe ของกราฟ (หน้าเว็บกับกราฟอยู่ origin เดียวกัน) · Esc เพื่อออก ----
 const fsBtn = document.getElementById('fs');
+function layout() {{  // ตรวจความกว้างจอทุกครั้งที่ขนาดเปลี่ยน (เช่นหมุนมือถือ)
+  const s = isSmall();
+  H = hOf();
+  if (window.frameElement && !isFull()) window.frameElement.style.height = (H + 8) + 'px';
+  leg.style.fontSize = s ? '10px' : '12px';  // มือถือ: ตัวหนังสือเล็กลง และย้ายปุ่มเต็มจอไปมุมล่างซ้าย
+  Object.assign(fsBtn.style, s ? {{ top: 'auto', bottom: '34px', right: 'auto', left: '6px' }}
+                               : {{ top: '4px', bottom: 'auto', right: '62px', left: 'auto' }});
+}}
 const pdoc = (() => {{ try {{ return window.parent.document; }} catch (e) {{ return null; }} }})();
 const isFull = () => !!((pdoc && pdoc.fullscreenElement === window.frameElement) || document.fullscreenElement);
 function fit() {{
   const full = isFull();
-  chart.applyOptions({{ width: el.clientWidth, height: full ? Math.max(300, window.innerHeight - 8) : P.h }});
+  chart.applyOptions({{ width: el.clientWidth, height: full ? Math.max(300, window.innerHeight - 8) : H }});
   fsBtn.textContent = full ? '✕ ออกจากเต็มจอ' : '⛶ เต็มจอ';
 }}
 fsBtn.onclick = async () => {{
@@ -318,7 +330,9 @@ fsBtn.onclick = async () => {{
   }} catch (e) {{ fsBtn.textContent = 'เบราว์เซอร์ไม่อนุญาตเต็มจอ'; return; }}
   setTimeout(fit, 150);
 }};
+layout(); fit();
 window.addEventListener('resize', () => setTimeout(fit, 50));
+try {{ window.parent.addEventListener('resize', () => setTimeout(() => {{ layout(); fit(); }}, 80)); }} catch (e) {{}}
 new ResizeObserver(() => chart.applyOptions({{ width: el.clientWidth }})).observe(el);
 </script>"""
     components.html(html, height=height + 8)
@@ -397,5 +411,7 @@ fsBtn.onclick = async () => {{
   }} catch (e) {{ fsBtn.textContent = 'เบราว์เซอร์ไม่อนุญาตเต็มจอ'; return; }}
 }};
 window.addEventListener('resize', () => {{ fsBtn.textContent = isFull() ? '✕ ออกจากเต็มจอ' : '⛶ เต็มจอ'; }});
+// จอมือถือ: กรอบเตี้ยลง (วิดเจ็ตขยายตามกรอบอยู่แล้ว)
+try {{ if (window.parent.innerWidth <= 640 && window.frameElement) window.frameElement.style.height = '480px'; }} catch (e) {{}}
 </script>"""
     components.html(html, height=height + 10)
