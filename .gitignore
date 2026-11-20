@@ -17,6 +17,7 @@
 !/files/us_indices.csv
 !/files/world_indices.csv
 !/files/sp500_valuation_monthly.csv
+!/files/my_list.csv
 !/files/_SET.BK_history_import.csv
 # บันทึกรายชื่อหุ้นที่ติดสัญญาณรายวัน (tools/snapshot_signals.py)
 !/files/signal_log/
