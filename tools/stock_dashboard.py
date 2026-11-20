@@ -26,6 +26,7 @@ from set_signals import render_signals_hub
 from market_mood import render_mood_tab
 from market_allocation import render_allocation_tab
 from mobile_ui import apply_mobile_ui
+from daily_report import render_daily_report
 from tv_chart import lw_chart, tv_widget, tv_symbol, signal_events, x7_panel, MARKERS, DEFAULT_MARKERS
 
 st.set_page_config(page_title="Stock Dashboard", page_icon="📈", layout="wide")
@@ -293,8 +294,8 @@ all_syms = list(dict.fromkeys(watchlist + list(world["yahoo"]) + list(set100["ya
 names.update({r.yahoo: r.name for r in us.itertuples()})
 names.update({r.yahoo: f"{r.country} · {r.index_name}" for r in world.itertuples()})
 
-TAB_CARDS, TAB_OVERVIEW, TAB_SIG, TAB_SECTOR, TAB_HIST, TAB_MOOD, TAB_ALLOC, TAB_FUND, TAB_CHART, TAB_COMPARE = (
-    "💳 การ์ดราคาหุ้น", "🗺️ ภาพรวมตลาด", "🧭 สัญญาณเทคนิค (SET100 · S&P 500)", "🔥 US Sector Heatmap",
+TAB_CARDS, TAB_REPORT, TAB_OVERVIEW, TAB_SIG, TAB_SECTOR, TAB_HIST, TAB_MOOD, TAB_ALLOC, TAB_FUND, TAB_CHART, TAB_COMPARE = (
+    "💳 การ์ดราคาหุ้น", "📰 รายงานประจำวัน", "🗺️ ภาพรวมตลาด", "🧭 สัญญาณเทคนิค (SET100 · S&P 500)", "🔥 US Sector Heatmap",
     "⏪ ย้อนหลัง & Backtest", "🌡️ ดัชนีอารมณ์ตลาด", "⚖️ สัดส่วนหุ้น-พันธบัตร", "🔎 ข้อมูลพื้นฐาน", "📈 กราฟราคา",
     "📊 เปรียบเทียบผลตอบแทน")
 
@@ -325,8 +326,8 @@ market = UNIVERSES[universe][0]
 unit = "ลบ." if market == "TH" else "ล้าน $"
 VALUE_COL = "มูลค่าซื้อขาย (ล้าน)"
 
-tab4, tab3, tab_sig, tab_sec, tab_hist, tab_mood, tab_alloc, tab_fund, tab1, tab2 = st.tabs(
-    [TAB_CARDS, TAB_OVERVIEW, TAB_SIG, TAB_SECTOR, TAB_HIST, TAB_MOOD, TAB_ALLOC, TAB_FUND, TAB_CHART, TAB_COMPARE],
+tab4, tab_rep, tab3, tab_sig, tab_sec, tab_hist, tab_mood, tab_alloc, tab_fund, tab1, tab2 = st.tabs(
+    [TAB_CARDS, TAB_REPORT, TAB_OVERVIEW, TAB_SIG, TAB_SECTOR, TAB_HIST, TAB_MOOD, TAB_ALLOC, TAB_FUND, TAB_CHART, TAB_COMPARE],
                                            key="main_tabs",
                                  on_change="rerun")  # เปิดการจำแท็บ เพื่อให้สลับแท็บจากโค้ดได้
 
@@ -505,6 +506,10 @@ with tab_mood:
         render_mood_tab()
 
 # ---------------- Stock/bond allocation model ----------------
+with tab_rep:
+    if getattr(tab_rep, "open", True):  # ดึงข้อมูลเฉพาะตอนเปิดแท็บนี้
+        render_daily_report()
+
 with tab_alloc:
     if getattr(tab_alloc, "open", True):  # ดึงข้อมูลเฉพาะตอนเปิดแท็บนี้
         render_allocation_tab()

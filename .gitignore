@@ -22,6 +22,8 @@
 !/files/signal_log/
 # ผลคำนวณสัญญาณล่วงหน้าให้หน้าเว็บเปิดได้เร็ว (tools/snapshot_signals.py)
 !/files/signal_cache/
+# รายงานประจำวันย้อนหลัง (tools/snapshot_report.py)
+!/files/daily_report/
 
 __pycache__/
 *.pyc

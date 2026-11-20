@@ -57,11 +57,17 @@ jobs:
         run: python tools/snapshot_signals.py
         continue-on-error: true
 
+      - name: Save daily report (files/daily_report)
+        # รายงานประจำวันเก็บไว้ย้อนดูในแท็บรายงานประจำวัน · ต้องรันหลังขั้นตอนสัญญาณ · ถ้าพัง ไม่กระทบขั้นตอนอื่น
+        if: github.event.schedule != '0 23 1 * *'
+        run: python tools/snapshot_report.py
+        continue-on-error: true
+
       - name: Commit changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
-          git add files/*.csv files/signal_log/*.csv files/signal_cache/*.csv files/signal_cache/updated_at.txt
+          git add files/*.csv files/signal_log/*.csv files/signal_cache/*.csv files/signal_cache/updated_at.txt files/daily_report/*.json
           if git diff --staged --quiet; then
             echo "No data changes"
           else
