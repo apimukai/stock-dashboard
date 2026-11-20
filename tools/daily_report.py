@@ -272,7 +272,20 @@ def summarize(rep: dict) -> list:
         line3 += " · สัญญาณซื้อใหม่ ✅ " + (f"{len(best)} ตัว: " + ", ".join(best[:8]) if best else "ไม่มีวันนี้")
     if n_sell:
         line3 += f" · 🔴 ไม้ที่ต้องขาย/ใกล้จุดขาย {n_sell} ไม้"
-    return [(line1, l1[1]), (line2, "#2a78d6"), (line3, "#555")]
+    out = [(line1, l1[1]), (line2, "#2a78d6"), (line3, "#555")]
+    # บรรทัดรายชื่อ: สัญญาณซื้อใหม่ของแต่ละตลาด (✅ ก่อน แล้วตามจำนวนหนุน) ตลาดละไม่เกิน 6 ตัว
+    parts = []
+    for nb in rep.get("newbuy", []):
+        rows = nb.get("rows") or []
+        if not rows:
+            continue
+        top = sorted(rows, key=lambda x: (not x["✅"], -x["หนุน"], x["วันที่ขึ้น"]))[:6]
+        names = ", ".join(("✅" if x["✅"] else "") + x["หุ้น"] for x in top)
+        more = f" +{len(rows) - len(top)}" if len(rows) > len(top) else ""
+        parts.append(f"{nb['name'].split(' ', 1)[1]} {len(rows)} ตัว: {names}{more}")
+    if parts:
+        out.append(("🟢 สัญญาณซื้อใหม่ · " + " · ".join(parts), "#1b7837"))
+    return out
 
 
 # ======================= คำนวณรายงาน (ไม่มี UI) =======================
