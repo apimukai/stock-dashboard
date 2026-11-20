@@ -106,6 +106,28 @@ def _card(title, value, sub, color):
             f'<div style="font-size:.85rem">{sub}</div></div>')
 
 
+def allocation_now() -> dict:
+    """สัดส่วนหุ้นที่สูตรแนะนำ ประมาณการ ณ ราคาล่าสุด (ใช้ในรายงานประจำวัน) · ตรรกะเดียวกับการ์ดในแท็บนี้"""
+    m_all, d, src = build()
+    today = d["^GSPC"].dropna().index[-1]
+    m = m_all[m_all.index < today + pd.offsets.MonthEnd(0)]
+    last_m = m.dropna(subset=["w"]).index[-1]
+    pe, _, _ = valuation()
+    px_now, tnx_now, vix_now = d["^GSPC"].dropna().iloc[-1], d["^TNX"].dropna().iloc[-1], d["^VIX"].dropna().iloc[-1]
+    cut = today.to_period("M").to_timestamp("M")
+    eyg_now = 100 / pe.iloc[-1] - tnx_now
+    hist = pd.concat([m["eyg"].dropna()[lambda s: s.index < cut].iloc[-119:], pd.Series([eyg_now])])
+    z_now = (eyg_now - hist.mean()) / hist.std()
+    strat = EYG_W["cheap"] if z_now > 1 else EYG_W["rich"] if z_now < -1 else EYG_W["fair"]
+    me = m["px"].dropna()[lambda s: s.index < cut].iloc[-9:]
+    down = px_now < pd.concat([me, pd.Series([px_now])]).mean()
+    vh = m["vix"].dropna()[lambda s: s.index < cut]
+    fear = (vh.iloc[-59:] < vix_now).mean() * 100 >= 90 and vix_now < vh.iloc[-1]
+    w = strat * ((0.75 if fear else 0.5) if down else 1.0)
+    return {"w": w, "z": z_now, "strategic": strat, "down": bool(down), "fear": bool(fear), "date": today,
+            "w_month": m.loc[last_m, "w"], "month": last_m}
+
+
 def render_allocation_tab():
     m_all, d, src = build()
     today = d["^GSPC"].dropna().index[-1]
