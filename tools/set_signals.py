@@ -874,6 +874,31 @@ PASS_GROUP = ("pass", "✅ ผ่านเกณฑ์: โมเมนตัม
               "สูตรที่ทดสอบย้อนหลังได้ Sharpe ดีที่สุด (SET100 1.07 เมื่อรวมตัวกรองตลาด · S&P 500 1.12) · ตัวเลข = ผลตอบแทน 12 เดือน",
               lambda t: (t["mom_rank"] <= 20) & (t["box"] != "X"))
 ALL_GROUPS = [PASS_GROUP, MOM_GROUP] + HL_GROUPS
+NEWBUY_MAX = 3  # กรอบสัญญาณซื้อใหม่: ขึ้นสัญญาณ "ซื้อ" ต่อเนื่องมาไม่เกินกี่วันทำการ
+NEWBUY_GROUP = ("buy", f"🟢 สัญญาณซื้อใหม่ (ไม่เกิน {NEWBUY_MAX} วัน)",
+                "ผลอ่านเพิ่งเปลี่ยนเป็น \"ซื้อ\" (จุดเขียวบนกราฟ) · ✅ = มีสัญญาณหนุน ≥ 2 ข้อ และโมเมนตัม 12 เดือนอยู่ 20% บนสุด "
+                "(แบบที่ backtest SET100 ปี 2015–2026 ได้ผลดีที่สุด เมื่อขายตามกฎ X7) · S&P 500 สัญญาณซื้อยังแพ้ตลาด",
+                lambda t: (t["verdict"] == "ซื้อ") & t["stk_buy"].between(1, NEWBUY_MAX))
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def buy_streaks(items: tuple, market: str, maxd: int = 10) -> dict:
+    """items = ((yahoo, วันที่ของแถวนั้น), ...) เฉพาะหุ้นที่ได้ "ซื้อ" · คืนจำนวนวันทำการที่ได้ "ซื้อ" ต่อเนื่องถึงวันนั้น
+    ใช้วันที่ของแต่ละแถว เพราะบางหุ้นแถวล่าสุดอาจช้ากว่าตัวอื่น 1 วัน (Yahoo ส่งแท่งล่าสุดไม่ครบตอนคำนวณ)"""
+    out = {}
+    if not items:
+        return out
+    day_of = dict(items)
+    for s, df in load_prices(tuple(day_of), period_of(market)).items():
+        df = df[df.index <= pd.Timestamp(day_of[s])]
+        if len(df) < 270:
+            continue
+        a = indicators(df)
+        n, i = 0, len(df) - 1
+        while n < maxd and evaluate(a, i - n)["verdict"] == "ซื้อ":
+            n += 1
+        out[s] = n
+    return out
 HL_LIMIT = 40  # จำนวนชิปสูงสุดต่อกล่อง (S&P 500 มีหุ้นเข้ากลุ่มได้เป็นร้อยตัว)
 
 
@@ -890,7 +915,8 @@ def _highlights(t: pd.DataFrame, p: str, groups, members: dict = None, title: st
     members = {กลุ่ม: set(yahoo)} จากบันทึกรายวัน (ถ้ามี) แทนการคำนวณกฎใหม่
     คอลัมน์ stk_<กลุ่ม> = จำนวนวันที่ติดกลุ่มต่อเนื่อง · dropped = หุ้นที่เมื่อวานอยู่ในกลุ่มแต่วันนี้หลุด"""
     if members is not None:
-        groups = [(k, ttl, d, (lambda t, k=k: t["yahoo"].isin(members.get(k, set())))) for k, ttl, d, _ in groups]
+        groups = [(k, ttl, d, rule if k == "buy" else (lambda t, k=k: t["yahoo"].isin(members.get(k, set()))))
+                  for k, ttl, d, rule in groups]
     st.markdown(HL_CSS, unsafe_allow_html=True)
     st.markdown(f"#### {title} <span style='font-size:.8rem;color:gray;font-weight:400'>"
                 "กดชื่อหุ้นเพื่อดูเหตุผลและกราฟด้านล่าง · ตัวเลข = คะแนนกฎ (🚀 = ผลตอบแทน 12 เดือน) · ไม่ใช่คำแนะนำซื้อขาย</span>",
@@ -899,7 +925,10 @@ def _highlights(t: pd.DataFrame, p: str, groups, members: dict = None, title: st
     cols = st.columns(2)
     for n, (key, title, desc, rule) in enumerate(groups):
         g = t[rule(t)]
-        g = g.sort_values("mom_rank") if key in ("mom", "pass") else g.sort_values(["score", "spec"], ascending=False)
+        if key == "buy":
+            g = g.assign(_best=g["best_buy"]).sort_values(["_best", "stk_buy", "score"], ascending=[False, True, False])
+        else:
+            g = g.sort_values("mom_rank") if key in ("mom", "pass") else g.sort_values(["score", "spec"], ascending=False)
         with cols[n % 2].container(border=True):
             st.markdown(f"**{title}** · {len(g)} ตัว")
             st.caption(desc)
@@ -915,7 +944,9 @@ def _highlights(t: pd.DataFrame, p: str, groups, members: dict = None, title: st
                     n = r.get(sk, 0) or 0
                     tag = ("🆕 " if n == 1 else "")
                     days = f" · {int(n)}{'+' if n >= cap else ''}ว" if n >= 1 else ""
-                    if key in ("mom", "pass"):
+                    if key == "buy":
+                        lab = (f"{'✅ ' if r['best_buy'] else ''}{tag}{r['symbol']} · {int(n)}ว · หนุน {len(r['sup'])}")
+                    elif key in ("mom", "pass"):
                         lab = f"{tag}{r['symbol']} {r['mom']:+.0%}{days}"
                     else:
                         lab = f"{tag}{r['symbol']} {r['score']:+d}{days}" + (" 🟢" if r["verdict"] == "ซื้อ" else "")
@@ -987,7 +1018,7 @@ def _picker_table(df: pd.DataFrame, key: str, p: str, **kw):
         st.rerun()
 
 
-FILTERS = ["ทั้งหมด", "✅ ผ่านเกณฑ์ (โมเมนตัม + ไม่ ✕)", "🆕 เพิ่งเข้ากลุ่มเด่น (ไม่เกิน 3 วัน)", "🚀 Top 20 โมเมนตัม", "💪 หุ้นแข็งแกร่ง", "🌱 หุ้นน่าติดตาม (กำลังฟื้น)", "◆ กรอบม่วง",
+FILTERS = ["ทั้งหมด", "✅ ผ่านเกณฑ์ (โมเมนตัม + ไม่ ✕)", "🆕 เพิ่งเข้ากลุ่มเด่น (ไม่เกิน 3 วัน)", "🟢 สัญญาณซื้อใหม่ (ไม่เกิน 3 วัน)", "🚀 Top 20 โมเมนตัม", "💪 หุ้นแข็งแกร่ง", "🌱 หุ้นน่าติดตาม (กำลังฟื้น)", "◆ กรอบม่วง",
            "★ หุ้นน่าจับตา", "ซื้อ / ถือ", "บวกวันนี้", "ลบวันนี้"]
 SORTS = ["คำแนะนำการลงทุน (กล่องสี)", "สถานะทางเทคนิค (คะแนนกฎ มาก→น้อย)", "ทิศทาง (▲ ก่อน)", "Spectrum (มาก→น้อย)",
          "โมเมนตัม 12 เดือน (มาก→น้อย)"]
@@ -1120,7 +1151,13 @@ def render_signals_tab(universe: pd.DataFrame, clickable_table=None, market: str
         for k in GKEYS:
             t[f"stk_{k}"] = 0
 
-    groups = ALL_GROUPS
+    # สัญญาณซื้อใหม่: นับวันที่ได้ "ซื้อ" ต่อเนื่อง จากราคาจริง (เฉพาะหุ้นที่วันนี้ได้ "ซื้อ")
+    bt_ = t[t["verdict"] == "ซื้อ"].sort_values("yahoo")
+    with st.spinner("กำลังนับวันของสัญญาณซื้อ ..."):
+        bs = buy_streaks(tuple((y, f"{d:%Y-%m-%d}") for y, d in zip(bt_["yahoo"], bt_["date"])), market)
+    t["stk_buy"] = t["yahoo"].map(bs).fillna(0).astype(int)
+    t["best_buy"] = (t["sup"].map(len) >= 2) & (t["mom_rank"] <= max(1, round(t["mom_rank"].max() * 0.2)))
+    groups = [NEWBUY_GROUP] + ALL_GROUPS
     _highlights(t, p, groups, members,
                 "⭐ หุ้นเด่นวันนี้" if asof is None else f"⭐ หุ้นเด่น ณ {day:%d %b %Y}", dropped, cap)
 
@@ -1178,6 +1215,8 @@ def render_signals_tab(universe: pd.DataFrame, clickable_table=None, market: str
             v = v[v["mom_rank"] <= 20]
         elif flt.startswith("✅"):
             v = v[(v["mom_rank"] <= 20) & (v["box"] != "X")]
+        elif flt.startswith("🟢"):
+            v = v[(v["verdict"] == "ซื้อ") & v["stk_buy"].between(1, NEWBUY_MAX)]
         elif flt.startswith("🆕"):
             s = v[[f"stk_{k}" for k in GKEYS]]
             v = v[((s >= 1) & (s <= 3)).any(axis=1)]
