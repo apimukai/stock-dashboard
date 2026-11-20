@@ -483,6 +483,178 @@ def load_report(date: str) -> dict:
         return json.load(f)
 
 
+# ======================= PDF =======================
+# ฟอนต์ไทย: Windows ใช้ Leelawadee/Tahoma · Streamlit Cloud ติดตั้งฟอนต์ TLWG จาก packages.txt (fonts-tlwg-loma-ttf)
+FONT_CANDIDATES = [
+    (r"C:\Windows\Fonts\leelawad.ttf", r"C:\Windows\Fonts\leelawdb.ttf"),
+    (r"C:\Windows\Fonts\tahoma.ttf", r"C:\Windows\Fonts\tahomabd.ttf"),
+    ("/usr/share/fonts/truetype/tlwg/Loma.ttf", "/usr/share/fonts/truetype/tlwg/Loma-Bold.ttf"),
+    ("/usr/share/fonts/truetype/tlwg/Garuda.ttf", "/usr/share/fonts/truetype/tlwg/Garuda-Bold.ttf"),
+]
+
+
+def _thai_font():
+    for reg, bold in FONT_CANDIDATES:
+        if os.path.exists(reg):
+            return reg, bold if os.path.exists(bold) else reg
+    hits = sorted(glob.glob("/usr/share/fonts/**/Loma*.ttf", recursive=True) +
+                  glob.glob("/usr/share/fonts/**/Garuda*.ttf", recursive=True))
+    if hits:
+        reg = next((h for h in hits if "Bold" not in h and "Oblique" not in h), hits[0])
+        bold = next((h for h in hits if h.endswith("-Bold.ttf")), reg)
+        return reg, bold
+    return None
+
+
+_SYM = {"✅": "*", "→": "->", "−": "-", "≥": ">=", "≤": "<=", "≈": "~", "✓": "", "↩": "", "✕": "x", "★": "*", "◆": ""}
+
+
+def _plain(x) -> str:
+    """ตัดอีโมจิ/สัญลักษณ์ที่ฟอนต์ไทยไม่มี"""
+    import re
+    t = "" if x is None else str(x)
+    for k, v in _SYM.items():
+        t = t.replace(k, v)
+    t = re.sub("[\U0001F000-\U0001FFFF\u2600-\u27BF\u2B00-\u2BFF\uFE0F\u200D]", "", t)
+    return re.sub(r"\s{2,}", " ", t).strip()
+
+
+def _num(v, fmt="{:,.2f}"):
+    try:
+        return "-" if v is None or pd.isna(v) else fmt.format(v)
+    except Exception:
+        return str(v)
+
+
+@st.cache_data(show_spinner=False)
+def report_pdf(rep_json: str):
+    """PDF ของรายงาน (ข้อมูลชุดเดียวกับหน้าเว็บ) · คืน bytes หรือ None ถ้าไม่มีฟอนต์ไทย"""
+    from fpdf import FPDF
+    from fpdf.fonts import FontFace
+    font = _thai_font()
+    if font is None:
+        return None
+    rep = json.loads(rep_json)
+    pdf = FPDF(format="A4")
+    pdf.set_margins(12, 12, 12)
+    pdf.set_auto_page_break(True, 12)
+    pdf.add_font("th", "", font[0])
+    pdf.add_font("th", "B", font[1])
+    try:
+        pdf.set_text_shaping(True)  # วางสระ/วรรณยุกต์ไทยให้ถูกตำแหน่ง (ต้องมี uharfbuzz)
+    except Exception:
+        pass
+    pdf.add_page()
+    W = pdf.epw
+
+    def h1(t):
+        pdf.set_font("th", "B", 15)
+        pdf.multi_cell(W, 8, _plain(t), new_x="LMARGIN", new_y="NEXT")
+
+    def h2(t):
+        pdf.ln(2)
+        pdf.set_font("th", "B", 12)
+        pdf.set_text_color(30, 60, 120)
+        pdf.multi_cell(W, 7, _plain(t), new_x="LMARGIN", new_y="NEXT")
+        pdf.set_text_color(0, 0, 0)
+
+    def para(t, size=10, bold=False):
+        pdf.set_font("th", "B" if bold else "", size)
+        pdf.multi_cell(W, 5.5, _plain(t), new_x="LMARGIN", new_y="NEXT")
+
+    def table(header, rows, widths=None, size=8):
+        if not rows:
+            return
+        pdf.set_font("th", "", size)
+        head = FontFace(emphasis="BOLD", fill_color=(230, 235, 245))
+        with pdf.table(col_widths=widths, headings_style=head, line_height=5, text_align="LEFT",
+                       first_row_as_headings=True) as tb:
+            r = tb.row()
+            for h in header:
+                r.cell(_plain(h))
+            for row in rows:
+                r = tb.row()
+                for v in row:
+                    r.cell(_plain(v))
+        pdf.ln(1)
+
+    d = pd.Timestamp(rep["date"])
+    h1(f"รายงานประจำวัน {d:%d/%m/%Y}")
+    para(f"สร้างเมื่อ {pd.Timestamp(rep['generated']):%d/%m/%Y %H:%M} น. · ข้อมูลราคาปิดล่าสุดของแต่ละตลาด", 9)
+    pdf.ln(1)
+    for i, (t, _) in enumerate(rep.get("summary") or summarize(rep)):
+        para(t, 10.5, bold=(i == 0))
+
+    sl = rep.get("sells")
+    if sl and "error" not in sl:
+        h2("1. ถึงจุดขาย / ใกล้จุดขาย (พอร์ตจำลองตามสัญญาณ · กฎ X7)")
+        for key, ttl in [("sell", "ต้องขายที่ราคาเปิดวันทำการถัดไป"), ("near", "ใกล้จุดขาย (ห่างเส้นขายไม่เกิน 3%)"),
+                         ("sold", "เพิ่งขายไป (ไม่เกิน 4 วัน)")]:
+            xs = sl.get(key) or []
+            if not xs:
+                continue
+            para(f"{ttl} · {len(xs)} ไม้", 9.5, bold=True)
+            last_h = "ห่างเส้นขาย %" if key == "near" else "เหตุผล"
+            table(["ตลาด", "หุ้น", "ซื้อวันที่", "ราคาซื้อ", "ล่าสุด/ขาย", "ผล %", last_h],
+                  [[x["ตลาด"], x["หุ้น"], x["ซื้อวันที่"], _num(x["ราคาซื้อ"]), _num(x["ล่าสุด/ขาย"]),
+                    _num(x["ผลตอบแทน %"], "{:+.1f}"),
+                    _num(x.get("ห่างเส้นขาย %"), "{:+.1f}") if key == "near" else x.get("เหตุผล", "")] for x in xs],
+                  widths=(22, 16, 20, 18, 18, 12, 40 if key != "near" else 18))
+        if not any(sl.get(k) for k in ("sell", "near", "sold")):
+            para(f"ไม่มีไม้ที่ถึงหรือใกล้จุดขาย · ถืออยู่ {sl.get('open', 0)} ไม้", 9.5)
+
+    if rep.get("newbuy") is not None:
+        h2(f"2. สัญญาณซื้อใหม่ (ขึ้นมาไม่เกิน {NEWBUY_MAX} วัน) · * = หนุน >= 2 และโมเมนตัม 20% บนสุด")
+        for nb in rep["newbuy"]:
+            f = nb.get("filter")
+            para(nb["name"] + (f" · ราคาปิด {pd.Timestamp(nb['day']):%d/%m/%Y}" if nb.get("day") else "")
+                 + (" · รายชื่อเฝ้าดู (ตลาดใต้เส้น 200 วัน)" if f and not f["above"] else ""), 9.5, bold=True)
+            rows = nb.get("rows") or []
+            if not rows:
+                para("ไม่มีสัญญาณซื้อใหม่", 9)
+                continue
+            table(["หุ้น", "*", "วัน", "หนุน", "ราคาปิด", "คัทลอส", "%", "เป้าหมาย", "%", "อันดับโมเมนตัม"],
+                  [[x["หุ้น"], "*" if x["✅"] else "", x["วันที่ขึ้น"], x["หนุน"], _num(x["ราคาปิด"]), _num(x["ตัดขาดทุน"]),
+                    _num(x["ตัดขาดทุน %"], "{:+.1f}"), _num(x["เป้าหมาย"]), _num(x["เป้าหมาย %"], "{:+.1f}"),
+                    _num(x.get("อันดับโมเมนตัม"), "{:.0f}")] for x in rows],
+                  widths=(20, 7, 9, 10, 20, 20, 12, 20, 12, 20))
+
+    ch = rep.get("changes") or {}
+    h2("3. อะไรเปลี่ยนจากรายงานฉบับก่อน" + (f" ({pd.Timestamp(ch['since']):%d/%m/%Y})" if ch.get("since") else ""))
+    items = ch.get("items") or []
+    para("\n".join(f"- {x}" for x in items) if items else
+         ("ไม่มีอะไรเปลี่ยนสถานะ" if ch.get("since") else "ยังไม่มีรายงานฉบับก่อนให้เทียบ"), 9.5)
+
+    m = rep["mood"]
+    h2("4. อารมณ์ตลาด (สหรัฐฯ · 0 = กลัวสุดขีด, 100 = โลภสุดขีด)")
+    para(f"วันนี้ {m['now']} {zone_of(m['now'])[0]} · " + " · ".join(
+        f"{r['label']} {r['value']}" for r in m["refs"] if r["value"] is not None), 10)
+    if m.get("drivers"):
+        para("ตัวที่ขยับมากสุดใน 1 สัปดาห์: " + " · ".join(m["drivers"]), 9)
+    para("สัญญาณเตือนล่วงหน้า (เครดิต + breadth): " + ("ทำงาน" if m["warn"] else "ไม่ทำงาน")
+         + f" · กลุ่มเหนือเส้น 200 วัน {m['breadth200']:.0f}% · S&P 500 ห่างจุดสูงสุด {m['off_high']:.1f}%", 9)
+    for b in rep.get("breadth", []):
+        para(f"{b['name']} หุ้นแข็งแกร่ง {b['now']:.0f}% (" +
+             ", ".join(f"{r['label']} {r['value']:.0f}%" for r in b["refs"] if r["value"] is not None) + ")", 9)
+
+    h2("5. สัดส่วนที่กฎของระบบให้ถือ")
+    a = rep.get("alloc") or {}
+    if "w" in a:
+        para(f"สูตรหุ้น-พันธบัตร 3 ชั้น: หุ้น {a['w'] * 100:.0f}% / พันธบัตร {100 - a['w'] * 100:.0f}% · " + " · ".join(a["why"]), 9.5)
+    table(["ดัชนี", "กฎ", "สถานะ", "ถือ %"],
+          [[h["ดัชนี"], h["กฎ"], h["สถานะ"], _num(h["ถือ %"], "{:.0f}")] for h in rep.get("holds", [])],
+          widths=(45, 35, 80, 16))
+
+    h2("6. ดัชนีไหนยังไปต่อ อันไหนลง")
+    table(["ดัชนี / สินทรัพย์", "ล่าสุด", "1 วัน %", "1 สัปดาห์ %", "1 เดือน %", "เทียบ 200 วัน %", "สถานะ"],
+          [[r["ดัชนี / สินทรัพย์"], _num(r["ล่าสุด"]), _num(r["1 วัน %"], "{:+.1f}"), _num(r["1 สัปดาห์ %"], "{:+.1f}"),
+            _num(r["1 เดือน %"], "{:+.1f}"), _num(r["เทียบเส้น 200 วัน %"], "{:+.1f}"), r["สถานะ"]] for r in rep.get("indices", [])],
+          widths=(42, 22, 15, 18, 17, 22, 40))
+    pdf.ln(2)
+    para(DISCLAIMER, 8)
+    return bytes(pdf.output())
+
+
 # ======================= UI =======================
 def _card(title, value, sub, color):
     return (f'<div style="border-radius:12px;padding:10px 14px;background:{color}1f;border:1px solid {color};'
@@ -529,6 +701,17 @@ def render_report(rep: dict, live: bool = True):
                 + "".join(f"<div style='margin:3px 0;font-size:1.0rem;{'font-weight:700;' if i == 0 else ''}color:{c}'>{t}</div>"
                           for i, (t, c) in enumerate(sm)) + "</div>", unsafe_allow_html=True)
     st.caption(DISCLAIMER)
+    try:
+        pdf = report_pdf(json.dumps(_clean(rep), ensure_ascii=False))
+    except Exception as e:  # PDF พังไม่ให้หน้ารายงานพัง
+        pdf, err = None, type(e).__name__
+    else:
+        err = "ไม่พบฟอนต์ภาษาไทยบนเครื่องนี้"
+    if pdf:
+        st.download_button("📄 ดาวน์โหลดรายงานเป็น PDF", pdf, file_name=f"daily_report_{d:%Y%m%d}.pdf",
+                           mime="application/pdf", key=f"rep_pdf_{rep['date']}_{live}")
+    else:
+        st.caption(f"📄 สร้าง PDF ไม่ได้ ({err})")
 
     # ---------- 1. ถึงจุดขาย ----------
     st.markdown("#### 🔴 1. ถึงจุดขาย / ใกล้จุดขาย")

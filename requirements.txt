@@ -5,3 +5,5 @@ pandas>=2.2
 lxml>=5.0
 requests>=2.31
 anthropic>=2.8
+fpdf2==2.9.0
+uharfbuzz==0.57.0
