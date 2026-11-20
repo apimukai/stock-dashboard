@@ -1,0 +1,11 @@
+# รายชื่อของฉัน: หุ้น/ETF นอก SET100 และ S&P 500 ที่อยากให้แท็บสัญญาณเทคนิคสแกนด้วย · ใช้ชื่อแบบ Yahoo (หุ้นไทยต่อท้าย .BK)
+yahoo,name,kind
+NBIS,Nebius Group,หุ้น
+CRWV,CoreWeave,หุ้น
+DRAM,Roundhill Memory ETF,ETF
+RAM,Roundhill 2x Long DRAM ETF,ETF ทวีคูณ
+SMH,VanEck Semiconductor ETF,ETF
+QQQ,Invesco QQQ (Nasdaq-100),ETF
+SQQQ,ProShares UltraPro Short QQQ (−3x),ETF กลับทิศ
+SVIX,−1x Short VIX Futures ETF,ETF กลับทิศ
+^VIX,CBOE Volatility Index,ดัชนี

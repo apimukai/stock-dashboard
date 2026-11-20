@@ -20,6 +20,8 @@ import set_signals as S  # noqa: E402
 
 
 def universe(market: str) -> tuple:
+    if market == "MY":
+        return tuple(S.load_my_list()["yahoo"])
     if market == "TH":
         df = pd.read_csv(os.path.join(S.FILES, "set100.csv"), comment="#", encoding="utf-8-sig")
         return tuple(df["yahoo"])
@@ -27,7 +29,7 @@ def universe(market: str) -> tuple:
     return tuple(df.loc[df["sp500"] == 1, "yahoo"])
 
 
-CLOSE = {"TH": ("Asia/Bangkok", 17, 0), "US": ("America/New_York", 16, 30)}  # เวลาที่ถือว่าตลาดปิดแล้ว
+CLOSE = {"TH": ("Asia/Bangkok", 17, 0), "US": ("America/New_York", 16, 30), "MY": ("America/New_York", 16, 30)}  # เวลาที่ถือว่าตลาดปิดแล้ว
 
 
 def last_closed_day(market: str):
@@ -42,7 +44,7 @@ def last_closed_day(market: str):
 
 def main():
     ok = 0
-    for market in ("TH", "US"):
+    for market in ("TH", "US", "MY"):  # MY ต้องหลัง US (จัดอันดับโมเมนตัมเทียบผล S&P 500)
         try:
             syms, asof = universe(market), last_closed_day(market)
             t = S.signal_table(syms, "D", market, asof)
