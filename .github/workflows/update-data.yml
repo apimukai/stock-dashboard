@@ -3,6 +3,7 @@ name: Update market data
 on:
   schedule:
     # ทุกวันจันทร์-ศุกร์ 22:30 UTC = 05:30 น. เวลาไทย (หลังตลาดสหรัฐฯ ปิด ได้ราคาปิดของทุกตลาดในวันนั้น)
+    # หมายเหตุ: คิวของ GitHub มักทำให้เริ่มช้าหลายชั่วโมง ที่ผ่านมารันจริงราว 10:00–11:30 น. เวลาไทย
     - cron: "30 22 * * 1-5"
     # วันที่ 1 ของทุกเดือน 23:00 UTC: อัปเดตรายชื่อหุ้นในดัชนีสหรัฐฯ
     - cron: "0 23 1 * *"
@@ -60,7 +61,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
-          git add files/*.csv files/signal_log/*.csv files/signal_cache/*.csv
+          git add files/*.csv files/signal_log/*.csv files/signal_cache/*.csv files/signal_cache/updated_at.txt
           if git diff --staged --quiet; then
             echo "No data changes"
           else

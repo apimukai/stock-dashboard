@@ -29,7 +29,8 @@ streamlit run tools/stock_dashboard.py
 | ข้อมูล | อัปเดตอย่างไร |
 |---|---|
 | ราคาหุ้น กราฟ ข้อมูลพื้นฐาน นักวิเคราะห์ | ดึงสดจาก Yahoo ทุกครั้งที่เปิดเว็บ (อัตโนมัติ) |
-| `files/assets_prices.csv` (ประวัติ SET Index ฯลฯ) | GitHub Actions รันทุกวันจันทร์–ศุกร์ 05:30 น. (เวลาไทย) |
+| `files/assets_prices.csv` (ประวัติ SET Index ฯลฯ) | GitHub Actions ทุกวันจันทร์–ศุกร์ · ตั้งไว้ 05:30 น. แต่ GitHub มักเริ่มช้า จริงราว 10:00–11:30 น. (เวลาไทย) |
+| `files/signal_log/`, `files/signal_cache/` (บันทึกสัญญาณรายวัน + ผลคำนวณล่วงหน้า) | GitHub Actions รอบเดียวกัน · เวลาที่อัปเดตจริงดูได้ในแท็บสัญญาณเทคนิค |
 | `files/us_indices.csv` (รายชื่อ S&P 500, Nasdaq-100, Dow) | GitHub Actions รันทุกวันที่ 1 ของเดือน |
 | `files/set100.csv` (รายชื่อ SET100/SET50) | **แก้เอง** ปีละ 2 ครั้ง (ม.ค./ก.ค.) ตามประกาศของ set.or.th |
 | `files/world_indices.csv` (ดัชนีทั่วโลก) | แก้เองเมื่ออยากเพิ่ม/ลดดัชนี |

@@ -544,6 +544,19 @@ def _read_cache(files: tuple):
     return t, h.drop(columns="groups")
 
 
+UPDATE_NOTE = "ตั้งเวลาไว้ 05:30 น. แต่ GitHub มักเริ่มช้า ปกติอัปเดตวันทำการช่วงสายราว 10:00–11:30 น."
+
+
+def cache_updated_at():
+    """เวลาที่ GitHub Actions อัปเดตผลคำนวณล่วงหน้าครั้งล่าสุด (เวลาไทย) หรือ None"""
+    p = os.path.join(CACHE_DIR, "updated_at.txt")
+    try:
+        t = pd.Timestamp(open(p, encoding="utf-8").read().strip())
+        return t.tz_convert("Asia/Bangkok") if t.tz is not None else t.tz_localize("UTC").tz_convert("Asia/Bangkok")
+    except Exception:
+        return None
+
+
 def load_cache(market: str):
     """(ตาราง, ประวัติสมาชิกกลุ่ม) ที่ GitHub Actions คำนวณไว้ · คืน (None, None) ถ้าไม่มีหรือเก่าเกินไป"""
     t, h = _read_cache(_cache_files(market))
@@ -617,7 +630,7 @@ def _render_log_results(market: str, syms: tuple):
     for col, H in zip(c[1:], HORIZONS):
         col.metric(f"วันที่วัดผล {H} วันได้แล้ว", ready.get(H, 0))
     if res.empty:
-        st.info("ยังวัดผลไม่ได้: ต้องมีราคาหลังวันที่บันทึกอย่างน้อย 5 วันทำการ · บันทึกเริ่มสะสมทุกเช้าวันทำการ "
+        st.info("ยังวัดผลไม่ได้: ต้องมีราคาหลังวันที่บันทึกอย่างน้อย 5 วันทำการ · บันทึกเริ่มสะสมทุกวันทำการ (ช่วงสาย) "
                 "แล้วตารางนี้จะเติมเองอัตโนมัติ (ผลที่พอเชื่อได้ควรมีบันทึกอย่างน้อย 2–3 เดือน)")
         return
     cfg = {}
@@ -1029,7 +1042,7 @@ def render_signals_tab(universe: pd.DataFrame, clickable_table=None, market: str
                   help="1W/1M เปลี่ยนเฉพาะกล่องสีในตาราง · คะแนนกฎและ Spectrum คำนวณจากแท่งรายวันเสมอ")
     sort = o2.selectbox("เรียงตาม", SORTS, key=f"{p}_sort", index=4 if market == "US" else 0)
     flt = o3.selectbox("กรอง", FILTERS, key=f"{p}_flt")
-    # ใช้ผลที่ GitHub Actions คำนวณไว้ทุกเช้า (เปิดได้ทันที) เมื่อดูวันล่าสุดด้วยแท่งรายวัน · ปิดสวิตช์ = คำนวณสดจากราคาล่าสุด
+    # ใช้ผลที่ GitHub Actions คำนวณไว้ทุกวันทำการ (เปิดได้ทันที) เมื่อดูวันล่าสุดด้วยแท่งรายวัน · ปิดสวิตช์ = คำนวณสดจากราคาล่าสุด
     h_cached, from_cache = None, False
     if asof is None and tf == "D":
         fast = st.toggle("⚡ ใช้ผลที่คำนวณไว้ล่วงหน้า (ราคาปิดล่าสุด · เปิดเร็ว)", value=True, key=f"{p}_fast",
@@ -1065,7 +1078,12 @@ def render_signals_tab(universe: pd.DataFrame, clickable_table=None, market: str
                 if k:
                     members.setdefault(k, set()).add(y)
     if asof is None:
-        how = "⚡ ผลคำนวณล่วงหน้าจากราคาปิด (อัปเดตทุกเช้า 05:30 น.)" if from_cache else f"คำนวณสดจาก Yahoo Finance ({src})"
+        if from_cache:
+            up = cache_updated_at()
+            how = ("⚡ ผลคำนวณล่วงหน้าจากราคาปิด · " + (f"อัปเดตล่าสุด {up:%d/%m/%Y %H:%M} น." if up is not None
+                                                         else "อัปเดตทุกวันทำการ") + " (ปกติช่วงสายราว 10:00–11:30 น.)")
+        else:
+            how = f"คำนวณสดจาก Yahoo Finance ({src})"
         st.caption(f"ข้อมูลถึง {day:%d %b %Y} · {len(t)} หุ้น · {how} · "
                    "คลิกชื่อหุ้น แถวในตาราง หรือช่องใน Spectrum เพื่อดูเหตุผลและกราฟในช่อง 🔍 เหตุผลรายตัว")
     elif members is not None:

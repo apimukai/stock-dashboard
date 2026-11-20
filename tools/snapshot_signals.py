@@ -57,6 +57,10 @@ def main():
             print(f"{S.LOG_KEY[market]}: ผิดพลาด {type(e).__name__}: {e}")
     if not ok:
         sys.exit(1)
+    # เวลาที่อัปเดตจริง (GitHub มักเริ่มงานช้ากว่าเวลาที่ตั้งไว้หลายชั่วโมง) ให้หน้าเว็บแสดงตามจริง
+    os.makedirs(S.CACHE_DIR, exist_ok=True)
+    with open(os.path.join(S.CACHE_DIR, "updated_at.txt"), "w", encoding="utf-8") as f:
+        f.write(dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"))
 
 
 if __name__ == "__main__":
