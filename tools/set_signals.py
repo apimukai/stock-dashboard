@@ -619,6 +619,8 @@ def log_results(files: tuple, market: str, syms: tuple) -> tuple:
 
 
 def _render_log_results(market: str, syms: tuple):
+    _render_newbuy_results(market)
+    st.divider()
     files = _log_files(market)
     res, n_days, ready = log_results(files, market, syms)
     st.markdown("**📒 ผลจริงหลังติดสัญญาณ (จากบันทึกรายวัน ไม่ใช่ backtest)**")
@@ -639,6 +641,134 @@ def _render_log_results(market: str, syms: tuple):
         cfg[f"{H} วัน: % ชนะ"] = st.column_config.NumberColumn(format="%.0f%%")
     st.dataframe(res, hide_index=True, use_container_width=True, column_config=cfg)
     st.caption("ช่วงที่บันทึกยังสั้น ตัวเลขจะแกว่งมากและเชื่อไม่ได้ · ช่วงถือซ้อนทับกันระหว่างวัน · ยังไม่หักค่าซื้อขาย · ไม่ใช่คำแนะนำการลงทุน")
+
+
+# ======================= ติดตามผลจริงของ "สัญญาณซื้อใหม่" (ทดสอบไปข้างหน้า) =======================
+# GitHub Actions บันทึกทุกวันทำการ -> files/signal_log/newbuy_<set100|sp500>_<ปี>.csv
+# 1 ไม้ = วันแรกที่ขึ้นสัญญาณซื้อ (days = 1) · ซื้อที่ราคาเปิดวันทำการถัดไป · ขายตามกฎ X7 (stop −8% + trailing 3×ATR)
+NB_COLS = ["date", "yahoo", "symbol", "days", "n_sup", "mom_rank", "best", "price", "score"]
+NB_COST = {"TH": 0.003, "US": 0.001}  # ค่าซื้อขายไปกลับโดยประมาณ
+NB_INDEX = {"TH": "^SET.BK", "US": "^GSPC"}
+
+
+def newbuy_rows(t: pd.DataFrame, market: str) -> pd.DataFrame:
+    """หุ้นที่ขึ้นสัญญาณซื้อมาไม่เกิน NEWBUY_MAX วัน ณ แถวล่าสุดของแต่ละหุ้น"""
+    n_all = t["mom_rank"].max()
+    t = t[~t["stale"] & (t["verdict"] == "ซื้อ")].sort_values("yahoo")
+    if t.empty:
+        return pd.DataFrame(columns=NB_COLS)
+    bs = buy_streaks(tuple((y, f"{d:%Y-%m-%d}") for y, d in zip(t["yahoo"], t["date"])), market)
+    out = pd.DataFrame({"date": t["date"].dt.strftime("%Y-%m-%d"), "yahoo": t["yahoo"], "symbol": t["symbol"],
+                        "days": t["yahoo"].map(bs).fillna(0).astype(int), "n_sup": t["sup"].map(len),
+                        "mom_rank": t["mom_rank"], "price": t["price"].round(4), "score": t["score"]})
+    out["best"] = out["n_sup"].ge(2) & out["mom_rank"].le(max(1, round(n_all * 0.2)))
+    return out[out["days"].between(1, NEWBUY_MAX)][NB_COLS]
+
+
+def save_newbuy(rows: pd.DataFrame, market: str) -> int:
+    if rows.empty:
+        return 0
+    os.makedirs(LOG_DIR, exist_ok=True)
+    for yr, g in rows.groupby(rows["date"].str[:4]):
+        path = os.path.join(LOG_DIR, f"newbuy_{LOG_KEY[market]}_{yr}.csv")
+        old = pd.read_csv(path) if os.path.exists(path) else pd.DataFrame(columns=NB_COLS)
+        key = set(zip(g["date"], g["yahoo"]))
+        old = old[[(d, y) not in key for d, y in zip(old["date"], old["yahoo"])]]
+        new = pd.concat([old, g], ignore_index=True) if len(old) else g
+        new.sort_values(["date", "best", "yahoo"], ascending=[True, False, True]).to_csv(path, index=False, encoding="utf-8")
+    return len(rows)
+
+
+def _nb_files(market: str) -> tuple:
+    if not os.path.isdir(LOG_DIR):
+        return ()
+    fs = sorted(f for f in os.listdir(LOG_DIR) if f.startswith(f"newbuy_{LOG_KEY[market]}_"))
+    return tuple((os.path.join(LOG_DIR, f), os.path.getmtime(os.path.join(LOG_DIR, f))) for f in fs)
+
+
+@st.cache_data(ttl=3600, show_spinner="กำลังคำนวณผลจริงของสัญญาณซื้อ ...")
+def newbuy_results(files: tuple, market: str) -> pd.DataFrame:
+    """1 แถว = 1 ไม้ (วันแรกของสัญญาณ) พร้อมสถานะ X7 ณ ราคาล่าสุด"""
+    from tv_chart import x7_exit
+    if not files:
+        return pd.DataFrame()
+    log = pd.concat([pd.read_csv(f) for f, _ in files], ignore_index=True)
+    tr = log[log["days"] == 1].drop_duplicates(["date", "yahoo"]).copy()
+    if tr.empty:
+        return pd.DataFrame()
+    px = load_prices(tuple(sorted(tr["yahoo"].unique())), "1y")
+    try:
+        ip = pd.read_csv(os.path.join(FILES, "assets_prices.csv"), encoding="utf-8-sig")
+        ip = ip[ip["symbol"] == NB_INDEX[market]]
+        idx = pd.Series(ip["close"].to_numpy(float), index=pd.to_datetime(ip["date"])).sort_index()
+    except Exception:
+        idx = pd.Series(dtype=float)
+    rows = []
+    for r in tr.itertuples():
+        df = px.get(r.yahoo)
+        rec = {"วันที่สัญญาณ": r.date, "yahoo": r.yahoo, "หุ้น": r.symbol, "✅": bool(r.best), "หนุน": int(r.n_sup),
+               "อันดับโมเมนตัม": r.mom_rank, "ราคาวันสัญญาณ": r.price}
+        after = df.index[df.index > pd.Timestamp(r.date)] if df is not None else []
+        if df is None or not len(after):
+            rec["สถานะ"] = "⏳ รอซื้อ (ราคาเปิดวันถัดไป)"
+            rows.append(rec)
+            continue
+        res = x7_exit(df, after[0])
+        if not res.get("ok"):
+            rec["สถานะ"] = "—"
+            rows.append(rec)
+            continue
+        ex = res["exit"]
+        done = ex is not None and ex.get("date") is not None
+        p_out, d_out = (ex["price"], ex["date"]) if done else (res["last"], res["last_date"])
+        ret = p_out / res["entry"] - 1 - (NB_COST[market] if done else NB_COST[market] / 2)
+        mk = np.nan
+        if len(idx):
+            a, b = idx.asof(res["entry_date"] - pd.Timedelta(days=1)), idx.asof(pd.Timestamp(d_out))
+            mk = b / a - 1 if pd.notna(a) and pd.notna(b) else np.nan
+        held = df.index[(df.index >= res["entry_date"]) & (df.index <= pd.Timestamp(d_out))]
+        rec.update({"ซื้อวันที่": f"{res['entry_date']:%Y-%m-%d}", "ราคาซื้อ": res["entry"],
+                    "สถานะ": ("🔴 ขายแล้ว · " + ("stop −8%" if "stop" in ex["why"] else "หลุด trailing")) if done
+                    else ("🟡 รอขาย (เกิดสัญญาณขายแล้ว)" if ex is not None else "🟢 ถืออยู่"),
+                    "ขาย/ล่าสุด": p_out, "ถึงวันที่": f"{pd.Timestamp(d_out):%Y-%m-%d}", "ถือ (วันทำการ)": int(len(held)),
+                    "ผลตอบแทน %": ret * 100, "ดัชนีช่วงเดียวกัน %": mk * 100, "ชนะดัชนี %": (ret - mk) * 100,
+                    "เส้น stop": res["stop"], "เส้น trailing": res["trail_now"], "_closed": done})
+        rows.append(rec)
+    return pd.DataFrame(rows).sort_values("วันที่สัญญาณ", ascending=False)
+
+
+def _render_newbuy_results(market: str):
+    st.markdown("**🟢 ผลจริงของ \"สัญญาณซื้อใหม่\" (ซื้อที่ราคาเปิดวันถัดไป · ขายตามกฎ X7)**")
+    st.caption("บันทึกทุกวันทำการตั้งแต่ 18 พ.ย. 2026 · 1 ไม้ = วันแรกที่ขึ้นสัญญาณซื้อ · หักค่าซื้อขายโดยประมาณ · "
+               "ไม้ที่ยังถืออยู่คิดจากราคาล่าสุด · ✅ = หนุน ≥ 2 + โมเมนตัม 20% บนสุด "
+               "(backtest SET100 ปี 2015–2026: ชนะตลาดเฉลี่ย +2.7%/ไม้ · ไม้ที่ชนะราว 35%)")
+    r = newbuy_results(_nb_files(market), market)
+    if r.empty or "ผลตอบแทน %" not in r:
+        st.info("ยังไม่มีไม้ที่ซื้อได้ · ระบบบันทึกสัญญาณทุกวันทำการ แล้วตารางนี้จะเติมเอง")
+        if not r.empty:
+            st.dataframe(r[["วันที่สัญญาณ", "หุ้น", "✅", "หนุน", "สถานะ"]], hide_index=True)
+        return
+    bought = r[r["ผลตอบแทน %"].notna()]
+    rows = []
+    for lab, g in [("ทุกสัญญาณ", bought), ("✅ หนุน ≥ 2 + โมเมนตัม", bought[bought["✅"]]),
+                   ("ไม่มี ✅", bought[~bought["✅"]])]:
+        c = g[g["_closed"] == True]  # noqa: E712
+        rows.append({"กลุ่ม": lab, "ไม้ทั้งหมด": len(g), "ขายแล้ว": len(c), "ถืออยู่": len(g) - len(c),
+                     "ชนะ % (ขายแล้ว)": (c["ผลตอบแทน %"] > 0).mean() * 100 if len(c) else np.nan,
+                     "เฉลี่ย/ไม้ %": g["ผลตอบแทน %"].mean() if len(g) else np.nan,
+                     "ชนะดัชนี/ไม้ %": g["ชนะดัชนี %"].mean() if len(g) else np.nan,
+                     "แย่สุด %": g["ผลตอบแทน %"].min() if len(g) else np.nan,
+                     "ดีสุด %": g["ผลตอบแทน %"].max() if len(g) else np.nan})
+    pc = {k: st.column_config.NumberColumn(format="%+.2f%%") for k in ["เฉลี่ย/ไม้ %", "ชนะดัชนี/ไม้ %", "แย่สุด %", "ดีสุด %"]}
+    pc["ชนะ % (ขายแล้ว)"] = st.column_config.NumberColumn(format="%.0f%%")
+    st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True, column_config=pc)
+    st.caption("ช่วงแรกจำนวนไม้ยังน้อย ตัวเลขแกว่งมาก ควรตัดสินเมื่อมีไม้ที่ขายแล้วอย่างน้อย 30–50 ไม้ · ไม่ใช่คำแนะนำการลงทุน")
+    show = ["วันที่สัญญาณ", "หุ้น", "✅", "หนุน", "สถานะ", "ซื้อวันที่", "ราคาซื้อ", "ขาย/ล่าสุด", "ถึงวันที่", "ถือ (วันทำการ)",
+            "ผลตอบแทน %", "ชนะดัชนี %", "เส้น stop", "เส้น trailing"]
+    cfg = {k: st.column_config.NumberColumn(format="%+.2f%%") for k in ["ผลตอบแทน %", "ชนะดัชนี %"]}
+    cfg.update({k: st.column_config.NumberColumn(format="%,.2f") for k in ["ราคาซื้อ", "ขาย/ล่าสุด", "เส้น stop", "เส้น trailing"]})
+    with st.expander(f"รายการทุกไม้ ({len(r)} ไม้)"):
+        st.dataframe(r[[c for c in show if c in r]], hide_index=True, use_container_width=True, column_config=cfg)
 
 
 GROUP_ICON = {"pass": "✅ ผ่านเกณฑ์", "mom": "🚀 โมเมนตัม", "strong": "💪 แข็งแกร่ง", "watch": "🌱 น่าติดตาม", "purple": "◆ กรอบม่วง",
