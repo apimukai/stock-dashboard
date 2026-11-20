@@ -25,6 +25,7 @@ from history_backtest import render_history_tab
 from set_signals import render_signals_hub
 from market_mood import render_mood_tab
 from market_allocation import render_allocation_tab
+from mobile_ui import apply_mobile_ui
 from tv_chart import lw_chart, tv_widget, tv_symbol, signal_events, x7_panel, MARKERS, DEFAULT_MARKERS
 
 st.set_page_config(page_title="Stock Dashboard", page_icon="📈", layout="wide")
@@ -241,6 +242,7 @@ if st.sidebar.button("🔄 ดึงข้อมูลใหม่ตอนน�
     st.cache_data.clear()
 
 st.title("📈 Stock Dashboard (Yahoo Finance)")
+apply_mobile_ui()  # จอมือถือ: แท็บเป็นปุ่มหลายแถว, ราคา 2 คอลัมน์, ปุ่มลอย ↑ เมนู
 if not watchlist:
     st.info("ใส่สัญลักษณ์อย่างน้อย 1 ตัวใน Watchlist")
     st.stop()
@@ -251,7 +253,7 @@ if not watchlist:
 def quote_board():
     st.caption(f"อัปเดตล่าสุด: {now_th():%Y-%m-%d %H:%M:%S}"
                + (f" · รีเฟรชทุก {refresh} วินาที" if refresh else ""))
-    cols = st.columns(min(5, len(watchlist)))
+    cols = st.container(key="quoteboard").columns(min(5, len(watchlist)))  # key ใช้จัดตาราง 2 ช่องบนมือถือ
     rows = []
     for i, sym in enumerate(watchlist):
         try:
