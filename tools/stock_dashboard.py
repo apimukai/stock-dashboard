@@ -37,7 +37,7 @@ PRICES_CSV = os.path.join(HERE, "..", "files", "assets_prices.csv")
 SET100_CSV = os.path.join(HERE, "..", "files", "set100.csv")  # รายชื่อจาก set.or.th อัปเดตทุก ม.ค./ก.ค.
 US_CSV = os.path.join(HERE, "..", "files", "us_indices.csv")  # สร้างด้วย tools/fetch_us_lists.py
 
-DEFAULT_WATCHLIST = ["^GSPC", "^IXIC", "^SET.BK", "NVDA", "AAPL", "MSFT", "TSLA", "GC=F", "BTC-USD", "THB=X"]
+DEFAULT_WATCHLIST = ["^GSPC", "^IXIC", "^SET.BK", "NVDA", "AAPL", "MSFT", "TSLA", "NBIS", "CRWV", "DRAM", "RAM", "SVIX", "^VIX", "GC=F", "BTC-USD", "THB=X"]
 
 # period -> interval ที่ Yahoo อนุญาต (intraday ย้อนหลังได้จำกัด)
 PERIODS = {
