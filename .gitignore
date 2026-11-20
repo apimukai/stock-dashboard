@@ -3,6 +3,7 @@
 /*
 !/.gitignore
 !/requirements.txt
+!/packages.txt
 !/README.md
 !/.github/
 !/tools/
