@@ -25,7 +25,7 @@ from history_backtest import render_history_tab
 from set_signals import render_signals_hub
 from market_mood import render_mood_tab
 from market_allocation import render_allocation_tab
-from tv_chart import lw_chart, tv_widget, tv_symbol, signal_events, MARKERS, DEFAULT_MARKERS
+from tv_chart import lw_chart, tv_widget, tv_symbol, signal_events, x7_panel, MARKERS, DEFAULT_MARKERS
 
 st.set_page_config(page_title="Stock Dashboard", page_icon="📈", layout="wide")
 
@@ -564,8 +564,15 @@ with tab1:
             if keys:
                 with st.spinner("กำลังคำนวณสัญญาณย้อนหลัง ..."):
                     events = signal_events(sym, start=df.index[0])
+            xl, xm = [], []
+            if interval == "1d":  # จุดขาย X7 จากวันที่ซื้อ (ค่าเริ่มต้น = สัญญาณซื้อ/A ล่าสุดบนกราฟ)
+                last_buy = None
+                if events is not None and len(events):
+                    b = events[events["key"].isin(["buy", "A"])]
+                    last_buy = b["date"].max() if len(b) else None
+                xl, xm = x7_panel(df, f"chart_{sym}", last_buy)
             lw_chart(df, ma=show_ma if daily else (), ma_kind=ma_kind, events=events, keys=keys, height=580,
-                     intraday=not daily, line=chart_type == "เส้น")
+                     intraday=not daily, line=chart_type == "เส้น", extra_lines=xl, extra_marks=xm)
             st.caption("ซูมด้วยล้อเมาส์ · ลากเพื่อเลื่อน · ดับเบิลคลิกแกนราคาเพื่อรีเซ็ต · ตัวอักษรบนกราฟ = วันแรกที่เกิดสัญญาณ "
                        "(💪 เข้ากลุ่มแข็งแกร่ง · ซื้อ/ขาย = ผลอ่านเปลี่ยน · A/C = สูตรที่ทดสอบย้อนหลังแล้วชนะตลาดใน 20 วัน) · "
                        "ไม่ใช่คำแนะนำซื้อขาย")

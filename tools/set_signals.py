@@ -817,10 +817,13 @@ def _detail(t: pd.DataFrame, px: dict, sym: str, asof=None):
                f"ช่อง/ทุบ {(10 if pd.notna(r['chan_days']) else 0) - (10 if r['smash'] else 0):+d} · RSI {r['rsi']:.0f}")
     # กราฟสไตล์ TradingView (Lightweight Charts) + EMA 10/50/200 + ปักวันที่เกิดสัญญาณ
     # ส่งข้อมูล 400 แท่งเพื่อให้เส้น EMA ต่อเนื่อง แล้วให้กราฟเปิดที่ 180 แท่งล่าสุด (ซูมออกดูย้อนหลังได้)
-    from tv_chart import lw_chart, signal_events, DEFAULT_MARKERS
+    from tv_chart import lw_chart, signal_events, x7_panel, DEFAULT_MARKERS
     full = px[sym].iloc[-400:]
     ev = signal_events(sym, start=full.index[0], end=full.index[-1])
-    lw_chart(full, ma=(10, 50, 200), ma_kind="EMA", events=ev, keys=DEFAULT_MARKERS, height=420, visible_bars=180)
+    b = ev[ev["key"].isin(["buy", "A"])] if len(ev) else ev
+    xl, xm = x7_panel(full, f"x7_{sym}", b["date"].max() if len(b) else None)
+    lw_chart(full, ma=(10, 50, 200), ma_kind="EMA", events=ev, keys=DEFAULT_MARKERS, height=420, visible_bars=180,
+             extra_lines=xl, extra_marks=xm)
     st.caption("ซูมด้วยล้อเมาส์ · ลากเพื่อเลื่อน · 💪 เข้ากลุ่มแข็งแกร่ง · ซื้อ/ขาย = ผลอ่านเปลี่ยน · "
                "A/C = สูตรที่ทดสอบแล้วชนะตลาดใน 20 วัน")
 

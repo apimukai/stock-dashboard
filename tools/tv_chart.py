@@ -78,8 +78,125 @@ def signal_events(sym: str, start=None, end=None, n_max: int = 800) -> pd.DataFr
     return pd.DataFrame(out, columns=["date", "key"])
 
 
+# ---------------- จุดขาย X7: Stop-loss −8% + Trailing stop 3×ATR (ผล backtest ดีที่สุดด้านคุมขาดทุน) ----------------
+X7_STOP, X7_ATR = 0.08, 3.0
+
+
+def x7_exit(df: pd.DataFrame, entry_date, entry_price: float = None, stop: float = X7_STOP, mult: float = X7_ATR) -> dict:
+    """คำนวณเส้นขาย X7 ตั้งแต่วันที่ซื้อ
+    - เส้น stop = ราคาซื้อ × (1 − 8%) · ราคาต่ำสุดของวันแตะเส้นนี้ = ขายทันที (ที่ราคา stop หรือราคาเปิดถ้ากระโดดผ่าน)
+    - เส้น trailing = ราคาปิดสูงสุดหลังซื้อ − 3 × ATR(14) · ราคาปิดต่ำกว่าเส้นนี้ = ขายที่ราคาเปิดวันถัดไป
+    คืน dict: lines (stop, trail), สถานะ, วันที่/ราคาขาย (ถ้าเกิดแล้ว)"""
+    d = df.dropna(subset=["Close"]).copy()
+    idx = pd.DatetimeIndex(d.index)
+    if idx.tz is not None:
+        idx = idx.tz_convert("Asia/Bangkok").tz_localize(None)
+    d.index = idx
+    o, h, l, c = (d[k].to_numpy(float) for k in ("Open", "High", "Low", "Close"))
+    prev_c = np.r_[np.nan, c[:-1]]
+    tr = np.nanmax(np.vstack([h - l, abs(h - prev_c), abs(l - prev_c)]), axis=0)
+    atr = pd.Series(tr).ewm(alpha=1 / 14, adjust=False).mean().to_numpy()
+    e = int(np.searchsorted(idx, pd.Timestamp(entry_date)))
+    if e >= len(d):
+        return {"ok": False, "msg": "วันที่ซื้อเลยข้อมูลล่าสุดของกราฟ"}
+    if e < 14:
+        return {"ok": False, "msg": "วันที่ซื้อเก่ากว่าช่วงกราฟ เลือกช่วงเวลาที่แถบซ้ายให้ยาวขึ้น"}
+    p = float(entry_price) if entry_price else float(o[e])
+    stop_px = p * (1 - stop)
+    hi, trail, out = -np.inf, [], None
+    for t in range(e, len(d)):
+        if l[t] <= stop_px:  # stop-loss ระหว่างวัน
+            out = {"date": idx[t], "price": min(o[t], stop_px) if t > e else stop_px, "why": f"แตะ stop −{stop:.0%}"}
+            trail.append((idx[t], hi - mult * atr[t] if hi > -np.inf else np.nan))
+            break
+        hi = max(hi, c[t])
+        tl = hi - mult * atr[t]
+        trail.append((idx[t], tl))
+        if c[t] < tl:
+            nxt = t + 1
+            out = {"date": idx[nxt] if nxt < len(d) else None, "price": float(o[nxt]) if nxt < len(d) else None,
+                   "why": f"ปิด {c[t]:,.2f} ต่ำกว่าเส้น trailing {tl:,.2f} (วันที่ {idx[t]:%d/%m/%Y})", "signal_day": idx[t]}
+            break
+    last_c = float(c[-1])
+    res = {"ok": True, "entry_date": idx[e], "entry": p, "stop": stop_px, "trail": trail, "exit": out,
+           "last": last_c, "last_date": idx[-1], "trail_now": trail[-1][1] if trail else np.nan,
+           "atr": float(atr[-1]), "high": hi}
+    return res
+
+
+def x7_overlays(res: dict, intraday: bool = False) -> tuple:
+    """เส้นและจุดสำหรับวาดบน lw_chart"""
+    if not res.get("ok"):
+        return [], []
+    tkey = (lambda t: int(pd.Timestamp(t).timestamp())) if intraday else (lambda t: pd.Timestamp(t).strftime("%Y-%m-%d"))
+    end = res["exit"]["date"] if res["exit"] and res["exit"].get("date") is not None else res["last_date"]
+    span = [t for t, _ in res["trail"]]
+    if res["exit"] and res["exit"].get("date") is not None and res["exit"]["date"] not in span:
+        span.append(res["exit"]["date"])
+    lines = [{"name": "Stop −8%", "color": "#d62728", "dashed": True,
+              "data": [{"time": tkey(t), "value": round(res["stop"], 4)} for t in span]},
+             {"name": "Trailing 3×ATR", "color": "#ff7f0e", "dashed": False,
+              "data": [{"time": tkey(t), "value": round(float(v), 4)} for t, v in res["trail"] if pd.notna(v)]}]
+    marks = [{"time": tkey(res["entry_date"]), "position": "belowBar", "color": "#1565c0", "shape": "arrowUp",
+              "text": f"ซื้อ {res['entry']:,.2f}"}]
+    if res["exit"] and res["exit"].get("date") is not None:
+        marks.append({"time": tkey(res["exit"]["date"]), "position": "aboveBar", "color": "#d62728",
+                      "shape": "arrowDown", "text": f"ขาย {res['exit']['price']:,.2f}"})
+    return lines, marks
+
+
+def x7_panel(df: pd.DataFrame, key: str, default_date=None) -> tuple:
+    """ช่องกรอกวันที่/ราคาซื้อ + สถานะการขายตามกฎ X7 · คืน (เส้น, จุด) ไปวาดบนกราฟ"""
+    ss = st.session_state
+    on = st.toggle("🛡️ แสดงจุดขาย X7 (Stop −8% + Trailing 3×ATR) จากวันที่ซื้อ", key=f"{key}_x7on",
+                   help="วิธีขายที่ backtest หุ้น SET100 ปี 2015–2026 แล้วคุมขาดทุนได้ดีที่สุด "
+                        "(ไม้ขาดทุนเกิน 10% เหลือไม่ถึง 1% · ขาดทุนแย่สุดราว −13%)")
+    if not on:
+        return [], []
+    idx = pd.DatetimeIndex(df.index)
+    if idx.tz is not None:
+        idx = idx.tz_convert("Asia/Bangkok").tz_localize(None)
+    lo, hi = idx[min(14, len(idx) - 1)].date(), idx[-1].date()
+    dflt = pd.Timestamp(default_date).date() if default_date is not None else idx[max(0, len(idx) - 21)].date()
+    dflt = min(max(dflt, lo), hi)
+    c1, c2, c3 = st.columns([1.2, 1.2, 2.6])
+    d = c1.date_input("วันที่ซื้อ", value=dflt, min_value=lo, max_value=hi, key=f"{key}_x7d", format="DD/MM/YYYY")
+    e = int(np.searchsorted(idx, pd.Timestamp(d)))
+    open_px = float(df["Open"].iloc[min(e, len(df) - 1)])
+    p = c2.number_input("ราคาซื้อ (เว้น 0 = ราคาเปิดวันนั้น)", min_value=0.0, value=0.0, step=0.01, format="%.2f",
+                        key=f"{key}_x7p")
+    res = x7_exit(df, d, p or None)
+    if not res["ok"]:
+        c3.warning(res["msg"])
+        return [], []
+    x = res["exit"]
+    if x:
+        pnl = (x["price"] / res["entry"] - 1) if x.get("price") else None
+        if x.get("date") is None:
+            c3.error(f"⚠️ **ขายพรุ่งนี้ที่ราคาเปิด** · {x['why']}")
+        else:
+            c3.warning(f"🔴 **ขายแล้ว {x['date']:%d/%m/%Y}** ที่ {x['price']:,.2f} · "
+                       f"{'กำไร' if pnl >= 0 else 'ขาดทุน'} {pnl:+.1%} · {x['why']}")
+    else:
+        pnl = res["last"] / res["entry"] - 1
+        gap = min(res["last"] / res["stop"] - 1, res["last"] / res["trail_now"] - 1 if res["trail_now"] > 0 else 9)
+        c3.success(f"🟢 **ถือต่อ** · ตอนนี้ {pnl:+.1%} · ราคาห่างเส้นขายที่ใกล้สุด {gap:.1%}")
+    m = st.columns(4)
+    m[0].metric("ราคาซื้อ", f"{res['entry']:,.2f}", f"{res['entry_date']:%d/%m/%Y}", delta_color="off")
+    m[1].metric("เส้น Stop −8%", f"{res['stop']:,.2f}", "ขายทันทีถ้าราคาแตะ", delta_color="off")
+    m[2].metric("เส้น Trailing ล่าสุด", f"{res['trail_now']:,.2f}" if pd.notna(res["trail_now"]) else "-",
+                "ปิดต่ำกว่า = ขายเปิดวันถัดไป", delta_color="off")
+    eff = max(res["stop"], res["trail_now"]) if pd.notna(res["trail_now"]) else res["stop"]
+    m[3].metric("เส้นขายที่ใช้จริงตอนนี้", f"{eff:,.2f}", "ค่าที่สูงกว่าของสองเส้น", delta_color="off")
+    st.caption(f"ราคาซื้อเริ่มต้น = ราคาเปิดวันที่เลือก ({open_px:,.2f}) · ATR(14) ล่าสุด {res['atr']:,.2f} · "
+               "เส้น trailing ขยับขึ้นตามราคาปิดสูงสุดหลังซื้อ (อาจลดลงเล็กน้อยเมื่อความผันผวนเพิ่ม ตามกฎที่ใช้ทดสอบ) · "
+               "ไม่ใช่คำแนะนำซื้อขาย")
+    return x7_overlays(res)
+
+
 def lw_chart(df: pd.DataFrame, ma=(10, 50, 200), ma_kind: str = "SMA", events: pd.DataFrame = None,
-             keys=None, height: int = 560, intraday: bool = False, line: bool = False, visible_bars: int = 0):
+             keys=None, height: int = 560, intraday: bool = False, line: bool = False, visible_bars: int = 0,
+             extra_lines=None, extra_marks=None):
     """วาดกราฟด้วย Lightweight Charts · df ต้องมี Open/High/Low/Close/Volume และ index เป็นวันที่"""
     df = df.dropna(subset=["Close"])
     if df.empty:
@@ -113,7 +230,13 @@ def lw_chart(df: pd.DataFrame, ma=(10, 50, 200), ma_kind: str = "SMA", events: p
             if t in tset:
                 _, pos, col, shape, txt = MARKERS[k]
                 marks.append({"time": t, "position": pos, "color": col, "shape": shape, "text": txt})
-        marks.sort(key=lambda m: m["time"])
+    if extra_marks:
+        tset = set(times)
+        marks += [m for m in extra_marks if m["time"] in tset]
+    marks.sort(key=lambda m: m["time"])
+    for L in extra_lines or []:
+        lines.append({"name": L["name"], "color": L["color"], "dashed": L.get("dashed", False), "extra": True,
+                      "data": L["data"]})
     bg, fg, grid = _theme()
     payload = json.dumps({"candles": candles, "closes": closes, "vols": vols, "lines": lines, "marks": marks,
                           "line": line, "intraday": intraday, "bg": bg, "fg": fg, "grid": grid, "h": height,
@@ -145,7 +268,8 @@ const vol = chart.addHistogramSeries({{ priceFormat: {{ type: 'volume' }}, price
 vol.priceScale().applyOptions({{ scaleMargins: {{ top: 0.82, bottom: 0 }} }});
 vol.setData(P.vols);
 const ls = P.lines.map(L => {{
-  const s = chart.addLineSeries({{ color: L.color, lineWidth: 1, priceLineVisible: false, lastValueVisible: false,
+  const s = chart.addLineSeries({{ color: L.color, lineWidth: L.extra ? 2 : 1, lineStyle: L.dashed ? 2 : 0,
+                                   priceLineVisible: false, lastValueVisible: !!L.extra, title: L.extra ? L.name : '',
                                    crosshairMarkerVisible: false }});
   s.setData(L.data); return [L, s];
 }});
