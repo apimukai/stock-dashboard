@@ -1,5 +1,4 @@
 date,yahoo,groups
-2026-09-25,__day__,
 2026-09-28,__day__,
 2026-09-29,__day__,
 2026-09-30,__day__,
@@ -39,7 +38,7 @@ date,yahoo,groups
 2026-11-17,__day__,
 2026-11-18,__day__,
 2026-11-19,__day__,
-2026-09-25,A,strong|purple|star
+2026-11-20,__day__,
 2026-09-28,A,strong|star
 2026-09-29,A,strong|star
 2026-09-30,A,strong|star
@@ -69,7 +68,6 @@ date,yahoo,groups
 2026-11-11,A,strong
 2026-11-18,A,strong
 2026-11-19,A,strong
-2026-09-25,AAPL,strong
 2026-09-28,AAPL,strong
 2026-10-06,AAPL,strong
 2026-10-07,AAPL,strong
@@ -97,7 +95,6 @@ date,yahoo,groups
 2026-11-16,AAPL,strong
 2026-11-17,AAPL,strong
 2026-11-18,AAPL,strong
-2026-09-25,ABBV,strong|star
 2026-09-28,ABBV,strong|star
 2026-10-02,ABBV,strong
 2026-10-05,ABBV,strong|star
@@ -200,6 +197,7 @@ date,yahoo,groups
 2026-11-13,ACGL,strong
 2026-11-16,ACGL,strong
 2026-11-17,ACGL,strong
+2026-11-20,ACGL,strong
 2026-09-30,ACN,watch|star
 2026-10-01,ACN,strong
 2026-10-02,ACN,strong
@@ -237,7 +235,6 @@ date,yahoo,groups
 2026-10-26,ADBE,star
 2026-10-27,ADBE,star
 2026-10-28,ADBE,star
-2026-09-25,ADI,strong|purple|star
 2026-09-28,ADI,strong|purple|star
 2026-09-29,ADI,strong|purple|star
 2026-09-30,ADI,strong|purple|star
@@ -368,7 +365,6 @@ date,yahoo,groups
 2026-11-12,AEP,strong
 2026-11-13,AEP,strong
 2026-11-16,AEP,strong
-2026-09-25,AES,strong
 2026-09-28,AES,strong
 2026-09-29,AES,strong
 2026-09-30,AES,strong
@@ -398,6 +394,7 @@ date,yahoo,groups
 2026-11-17,AES,strong
 2026-11-18,AES,strong
 2026-11-19,AES,strong
+2026-11-20,AES,strong
 2026-10-12,AFL,watch
 2026-10-13,AFL,strong
 2026-10-14,AFL,strong|star
@@ -477,6 +474,7 @@ date,yahoo,groups
 2026-11-16,AIZ,strong
 2026-11-17,AIZ,strong
 2026-11-18,AIZ,strong
+2026-11-20,AIZ,strong
 2026-10-15,AJG,strong
 2026-10-16,AJG,strong|star
 2026-10-19,AJG,strong|star
@@ -501,7 +499,6 @@ date,yahoo,groups
 2026-11-16,AJG,strong
 2026-11-17,AJG,strong
 2026-11-18,AJG,strong
-2026-09-25,AKAM,strong
 2026-10-19,ALGN,star
 2026-10-20,ALGN,star
 2026-10-21,ALGN,star
@@ -549,7 +546,7 @@ date,yahoo,groups
 2026-11-17,ALL,strong
 2026-11-18,ALL,strong
 2026-11-19,ALL,strong
-2026-09-25,ALLE,strong
+2026-11-20,ALL,strong
 2026-09-28,ALLE,strong
 2026-09-29,ALLE,strong
 2026-10-01,ALLE,strong
@@ -580,7 +577,6 @@ date,yahoo,groups
 2026-11-12,ALLE,strong
 2026-11-13,ALLE,strong
 2026-11-16,ALLE,strong
-2026-09-25,AMAT,pass|mom|strong
 2026-09-28,AMAT,pass|mom|strong
 2026-09-29,AMAT,pass|mom|strong|purple|star
 2026-09-30,AMAT,pass|mom|strong|purple|star
@@ -618,7 +614,6 @@ date,yahoo,groups
 2026-11-02,AMCR,strong
 2026-11-03,AMCR,strong
 2026-11-04,AMCR,strong
-2026-09-25,AMD,pass|mom|strong|purple|star
 2026-09-28,AMD,pass|mom|strong|star
 2026-09-29,AMD,pass|mom|strong|purple|star
 2026-09-30,AMD,pass|mom|strong|star
@@ -658,7 +653,7 @@ date,yahoo,groups
 2026-11-17,AMD,mom
 2026-11-18,AMD,pass|mom|watch
 2026-11-19,AMD,mom
-2026-09-25,AME,strong|purple|star
+2026-11-20,AMD,mom
 2026-09-28,AME,strong|purple|star
 2026-09-29,AME,strong|purple|star
 2026-09-30,AME,strong|purple|star
@@ -678,7 +673,6 @@ date,yahoo,groups
 2026-11-11,AME,watch
 2026-11-12,AME,watch
 2026-11-13,AME,watch
-2026-09-25,AMGN,strong
 2026-09-28,AMGN,strong|star
 2026-09-29,AMGN,strong
 2026-09-30,AMGN,strong|star
@@ -772,7 +766,6 @@ date,yahoo,groups
 2026-11-17,AMZN,star
 2026-11-18,AMZN,strong|star
 2026-11-19,AMZN,star
-2026-09-25,ANET,strong
 2026-09-28,ANET,strong
 2026-09-29,ANET,strong
 2026-09-30,ANET,strong
@@ -793,6 +786,7 @@ date,yahoo,groups
 2026-11-12,ANET,strong
 2026-11-13,ANET,strong
 2026-11-18,ANET,strong
+2026-11-19,ANET,strong
 2026-10-21,AON,star
 2026-10-22,AON,watch|star
 2026-10-23,AON,watch|star
@@ -863,7 +857,7 @@ date,yahoo,groups
 2026-11-16,APA,pass|mom|strong|star
 2026-11-17,APA,pass|mom|star
 2026-11-18,APA,mom
-2026-11-19,APA,mom
+2026-11-20,APA,mom
 2026-10-13,APD,watch
 2026-10-14,APD,strong
 2026-10-15,APD,strong|star
@@ -887,7 +881,6 @@ date,yahoo,groups
 2026-11-12,APD,strong
 2026-11-13,APD,strong
 2026-11-16,APD,strong
-2026-09-25,APH,strong
 2026-09-28,APH,strong
 2026-09-29,APH,strong
 2026-09-30,APH,strong
@@ -926,6 +919,8 @@ date,yahoo,groups
 2026-11-16,APP,strong|star
 2026-11-17,APP,strong|star
 2026-11-18,APP,watch|star
+2026-11-19,APP,star
+2026-11-20,APP,star
 2026-11-04,ARE,watch|star
 2026-11-09,ARE,watch|star
 2026-10-22,ARES,watch|star
@@ -1023,6 +1018,7 @@ date,yahoo,groups
 2026-11-13,AWK,strong
 2026-11-16,AWK,strong
 2026-11-18,AWK,strong
+2026-11-20,AWK,strong
 2026-11-04,AXON,star
 2026-10-20,AXP,watch|star
 2026-10-21,AXP,watch|star
@@ -1109,7 +1105,7 @@ date,yahoo,groups
 2026-11-17,BAX,strong|purple|star
 2026-11-18,BAX,strong|purple|star
 2026-11-19,BAX,star
-2026-09-25,BBY,star
+2026-11-20,BAX,star
 2026-09-28,BBY,star
 2026-10-08,BBY,strong
 2026-10-13,BBY,strong
@@ -1137,7 +1133,6 @@ date,yahoo,groups
 2026-11-12,BBY,strong
 2026-11-13,BBY,strong
 2026-11-16,BBY,strong
-2026-09-25,BDX,strong
 2026-09-28,BDX,strong
 2026-10-05,BDX,strong
 2026-10-08,BDX,strong
@@ -1170,7 +1165,6 @@ date,yahoo,groups
 2026-11-16,BDX,strong
 2026-11-17,BDX,strong
 2026-11-18,BDX,strong
-2026-09-25,BE,pass|mom|strong
 2026-09-28,BE,pass|mom
 2026-09-29,BE,pass|mom|strong
 2026-09-30,BE,pass|mom|strong
@@ -1200,6 +1194,7 @@ date,yahoo,groups
 2026-11-16,BE,mom
 2026-11-17,BE,mom
 2026-11-18,BE,mom
+2026-11-19,BE,mom
 2026-10-02,BEN,watch
 2026-10-05,BEN,watch
 2026-10-21,BEN,watch
@@ -1242,7 +1237,6 @@ date,yahoo,groups
 2026-11-13,BF-B,strong
 2026-11-16,BF-B,strong
 2026-11-18,BF-B,strong
-2026-09-25,BIIB,strong
 2026-09-28,BIIB,strong|star
 2026-09-29,BIIB,strong|star
 2026-09-30,BIIB,strong|star
@@ -1281,7 +1275,6 @@ date,yahoo,groups
 2026-11-11,BKNG,star
 2026-11-12,BKNG,star
 2026-10-27,BKR,strong
-2026-09-25,BLK,watch
 2026-10-06,BLK,watch
 2026-10-09,BLK,watch
 2026-10-12,BLK,watch
@@ -1308,7 +1301,6 @@ date,yahoo,groups
 2026-11-11,BLK,strong
 2026-11-12,BLK,strong
 2026-11-13,BLK,strong
-2026-09-25,BMY,watch
 2026-09-28,BMY,strong
 2026-10-15,BMY,watch
 2026-10-16,BMY,watch
@@ -1434,6 +1426,7 @@ date,yahoo,groups
 2026-11-17,BRO,strong
 2026-11-18,BRO,strong
 2026-11-19,BRO,strong
+2026-11-20,BRO,strong
 2026-10-16,BSX,star
 2026-10-19,BSX,star
 2026-10-20,BSX,watch|star
@@ -1471,7 +1464,6 @@ date,yahoo,groups
 2026-11-13,BXP,watch
 2026-11-16,BXP,watch|star
 2026-11-18,BXP,watch|star
-2026-09-25,C,watch
 2026-10-09,C,watch
 2026-10-12,C,watch
 2026-10-29,C,watch
@@ -1525,7 +1517,6 @@ date,yahoo,groups
 2026-11-12,CASY,strong
 2026-11-13,CASY,strong
 2026-11-17,CASY,strong
-2026-09-25,CAT,watch
 2026-09-28,CAT,watch
 2026-09-29,CAT,watch
 2026-10-01,CAT,watch
@@ -1562,6 +1553,7 @@ date,yahoo,groups
 2026-11-13,CB,strong
 2026-11-16,CB,strong
 2026-11-17,CB,strong
+2026-11-20,CB,strong
 2026-10-07,CBOE,strong
 2026-10-08,CBOE,strong
 2026-10-09,CBOE,strong|star
@@ -1657,7 +1649,6 @@ date,yahoo,groups
 2026-11-09,CCL,strong
 2026-11-10,CCL,strong
 2026-11-11,CCL,strong
-2026-09-25,CDNS,watch|star
 2026-09-28,CDNS,watch|star
 2026-09-29,CDNS,watch
 2026-09-30,CDNS,strong|star
@@ -1703,6 +1694,8 @@ date,yahoo,groups
 2026-11-12,CDW,strong
 2026-11-13,CDW,strong
 2026-11-18,CDW,strong
+2026-11-19,CDW,strong
+2026-11-20,CDW,star
 2026-10-06,CEG,strong
 2026-10-07,CEG,strong
 2026-10-08,CEG,strong|star
@@ -1783,6 +1776,7 @@ date,yahoo,groups
 2026-10-02,CHRW,watch|star
 2026-11-17,CHRW,star
 2026-11-19,CHRW,star
+2026-11-20,CHRW,star
 2026-11-04,CHTR,watch|star
 2026-11-05,CHTR,watch|star
 2026-11-06,CHTR,star
@@ -1795,6 +1789,7 @@ date,yahoo,groups
 2026-11-17,CHTR,watch|star
 2026-11-18,CHTR,watch|star
 2026-11-19,CHTR,star
+2026-11-20,CHTR,star
 2026-10-07,CI,watch|star
 2026-10-08,CI,watch|star
 2026-10-09,CI,strong|star
@@ -1814,7 +1809,6 @@ date,yahoo,groups
 2026-11-10,CI,strong
 2026-11-11,CI,strong
 2026-11-16,CI,strong
-2026-09-25,CIEN,pass|mom
 2026-09-28,CIEN,mom
 2026-09-29,CIEN,pass|mom
 2026-09-30,CIEN,mom
@@ -1832,7 +1826,6 @@ date,yahoo,groups
 2026-11-05,CIEN,mom
 2026-11-06,CIEN,mom
 2026-11-09,CIEN,mom
-2026-11-19,CIEN,mom
 2026-10-15,CINF,watch
 2026-10-16,CINF,strong|star
 2026-10-19,CINF,strong|star
@@ -1883,6 +1876,7 @@ date,yahoo,groups
 2026-11-16,CL,strong
 2026-11-17,CL,strong
 2026-11-18,CL,strong
+2026-11-20,CL,strong
 2026-10-20,CLX,star
 2026-10-22,CLX,star
 2026-10-23,CLX,star
@@ -1918,6 +1912,7 @@ date,yahoo,groups
 2026-11-13,CMCSA,watch
 2026-11-16,CMCSA,strong
 2026-11-18,CMCSA,watch
+2026-11-20,CMCSA,watch|star
 2026-10-05,CME,watch
 2026-10-06,CME,watch|star
 2026-10-07,CME,watch|star
@@ -1964,6 +1959,7 @@ date,yahoo,groups
 2026-11-17,CMG,strong|star
 2026-11-18,CMG,strong|star
 2026-11-19,CMG,strong|star
+2026-11-20,CMG,strong|star
 2026-10-14,CMS,star
 2026-10-15,CMS,star
 2026-10-16,CMS,watch|star
@@ -1982,6 +1978,7 @@ date,yahoo,groups
 2026-11-10,CMS,watch|star
 2026-11-13,CMS,watch
 2026-11-16,CMS,strong
+2026-11-20,CMS,watch|star
 2026-10-02,CNC,watch
 2026-10-05,CNC,strong
 2026-10-06,CNC,strong
@@ -2010,7 +2007,6 @@ date,yahoo,groups
 2026-11-13,CNC,strong
 2026-11-16,CNC,strong
 2026-11-17,CNC,strong
-2026-11-19,CNC,mom
 2026-10-12,CNP,star
 2026-10-13,CNP,watch|star
 2026-10-14,CNP,watch|star
@@ -2038,7 +2034,6 @@ date,yahoo,groups
 2026-11-02,COF,strong
 2026-11-03,COF,strong
 2026-11-04,COF,strong
-2026-09-25,COHR,mom
 2026-09-28,COHR,mom
 2026-09-29,COHR,mom
 2026-09-30,COHR,mom
@@ -2069,7 +2064,6 @@ date,yahoo,groups
 2026-11-04,COHR,mom
 2026-11-05,COHR,mom
 2026-11-06,COHR,mom
-2026-09-25,COIN,strong
 2026-09-28,COIN,watch
 2026-09-30,COIN,star
 2026-10-01,COIN,star
@@ -2173,6 +2167,7 @@ date,yahoo,groups
 2026-11-17,COST,strong
 2026-11-18,COST,strong
 2026-11-19,COST,strong
+2026-11-20,COST,strong
 2026-10-05,CPAY,strong
 2026-10-06,CPAY,strong
 2026-10-07,CPAY,strong
@@ -2236,7 +2231,6 @@ date,yahoo,groups
 2026-11-11,CRH,watch|star
 2026-11-12,CRH,star
 2026-11-13,CRH,star
-2026-09-25,CRL,strong|star
 2026-09-28,CRL,strong|star
 2026-09-29,CRL,strong|star
 2026-09-30,CRL,strong|star
@@ -2264,6 +2258,7 @@ date,yahoo,groups
 2026-11-10,CRL,strong
 2026-11-11,CRL,strong
 2026-11-19,CRL,pass|mom
+2026-11-20,CRL,mom
 2026-10-01,CRM,strong
 2026-10-02,CRM,strong
 2026-10-12,CRM,strong
@@ -2279,7 +2274,6 @@ date,yahoo,groups
 2026-10-26,CRM,strong|star
 2026-10-27,CRM,star
 2026-10-28,CRM,star
-2026-09-25,CRWD,strong|purple|star
 2026-09-28,CRWD,strong
 2026-09-29,CRWD,strong
 2026-09-30,CRWD,strong
@@ -2295,6 +2289,7 @@ date,yahoo,groups
 2026-10-28,CRWD,strong|star
 2026-10-29,CRWD,strong|star
 2026-11-18,CRWD,strong
+2026-11-19,CRWD,strong
 2026-10-01,CSCO,watch
 2026-10-02,CSCO,strong
 2026-10-05,CSCO,strong|star
@@ -2354,7 +2349,6 @@ date,yahoo,groups
 2026-11-12,CSX,strong
 2026-11-13,CSX,strong
 2026-11-16,CSX,strong
-2026-09-25,CTAS,strong
 2026-09-28,CTAS,strong
 2026-10-07,CTAS,watch
 2026-10-08,CTAS,strong
@@ -2415,6 +2409,8 @@ date,yahoo,groups
 2026-11-16,CVNA,star
 2026-11-17,CVNA,star
 2026-11-18,CVNA,strong|star
+2026-11-19,CVNA,star
+2026-11-20,CVNA,star
 2026-10-14,CVS,watch
 2026-10-15,CVS,strong
 2026-10-16,CVS,strong
@@ -2468,7 +2464,6 @@ date,yahoo,groups
 2026-11-11,D,strong
 2026-11-13,D,strong
 2026-11-16,D,strong
-2026-09-25,DAL,strong
 2026-09-28,DAL,strong|star
 2026-09-29,DAL,strong|star
 2026-09-30,DAL,strong|star
@@ -2522,7 +2517,6 @@ date,yahoo,groups
 2026-11-11,DD,strong
 2026-11-12,DD,strong
 2026-11-13,DD,strong
-2026-09-25,DDOG,strong|purple|star
 2026-09-28,DDOG,strong|purple|star
 2026-09-29,DDOG,strong|purple|star
 2026-09-30,DDOG,strong|star
@@ -2540,7 +2534,6 @@ date,yahoo,groups
 2026-10-26,DDOG,strong
 2026-10-27,DDOG,strong
 2026-10-28,DDOG,strong
-2026-09-25,DE,strong
 2026-09-28,DE,strong
 2026-10-02,DE,strong
 2026-10-06,DE,strong
@@ -2570,7 +2563,6 @@ date,yahoo,groups
 2026-11-09,DECK,watch|star
 2026-11-10,DECK,watch
 2026-11-13,DECK,watch|star
-2026-09-25,DELL,pass|mom|strong|star
 2026-09-28,DELL,pass|mom|star
 2026-09-29,DELL,pass|mom|star
 2026-09-30,DELL,pass|mom|star
@@ -2609,7 +2601,8 @@ date,yahoo,groups
 2026-11-16,DELL,mom
 2026-11-17,DELL,mom
 2026-11-18,DELL,mom
-2026-09-25,DG,strong
+2026-11-19,DELL,mom
+2026-11-20,DELL,mom
 2026-09-28,DG,strong
 2026-10-06,DG,strong
 2026-10-07,DG,watch
@@ -2661,6 +2654,7 @@ date,yahoo,groups
 2026-11-16,DGX,strong
 2026-11-18,DGX,strong
 2026-11-19,DGX,strong
+2026-11-20,DGX,strong
 2026-10-22,DHI,strong|star
 2026-10-23,DHI,strong|star
 2026-10-26,DHI,strong|star
@@ -2674,7 +2668,6 @@ date,yahoo,groups
 2026-11-05,DHI,strong
 2026-11-06,DHI,strong
 2026-11-09,DHI,strong
-2026-09-25,DHR,strong
 2026-09-28,DHR,strong
 2026-09-29,DHR,strong|star
 2026-09-30,DHR,strong|star
@@ -2705,7 +2698,6 @@ date,yahoo,groups
 2026-11-10,DHR,strong
 2026-11-11,DHR,strong
 2026-11-13,DHR,strong
-2026-09-25,DIS,strong
 2026-09-28,DIS,strong
 2026-09-29,DIS,strong
 2026-10-07,DIS,strong
@@ -2836,6 +2828,7 @@ date,yahoo,groups
 2026-11-17,DPZ,strong
 2026-11-18,DPZ,strong
 2026-11-19,DPZ,strong
+2026-11-20,DPZ,strong
 2026-10-13,DRI,watch
 2026-10-14,DRI,strong
 2026-10-15,DRI,strong|star
@@ -2905,6 +2898,7 @@ date,yahoo,groups
 2026-11-16,DUK,strong
 2026-11-17,DUK,strong
 2026-11-18,DUK,strong
+2026-11-20,DUK,strong
 2026-10-02,DVA,watch
 2026-10-05,DVA,watch
 2026-10-06,DVA,watch
@@ -3010,7 +3004,6 @@ date,yahoo,groups
 2026-11-13,ECHO,strong|star
 2026-11-16,ECHO,strong|star
 2026-11-17,ECHO,strong|star
-2026-09-25,ECL,strong
 2026-09-28,ECL,strong
 2026-09-29,ECL,strong
 2026-10-05,ECL,strong
@@ -3069,6 +3062,7 @@ date,yahoo,groups
 2026-11-12,ED,strong
 2026-11-13,ED,strong
 2026-11-16,ED,strong
+2026-11-20,ED,strong
 2026-10-15,EFX,watch|star
 2026-10-16,EFX,watch
 2026-10-20,EFX,watch|star
@@ -3118,6 +3112,7 @@ date,yahoo,groups
 2026-11-16,EG,strong
 2026-11-17,EG,strong
 2026-11-19,EG,strong
+2026-11-20,EG,strong
 2026-10-09,EIX,star
 2026-10-13,EIX,star
 2026-10-14,EIX,star
@@ -3198,7 +3193,6 @@ date,yahoo,groups
 2026-11-13,ELV,strong
 2026-11-16,ELV,strong
 2026-11-17,ELV,strong
-2026-09-25,EME,watch
 2026-09-28,EME,watch
 2026-09-29,EME,watch
 2026-10-01,EME,watch
@@ -3210,7 +3204,6 @@ date,yahoo,groups
 2026-10-09,EME,strong|star
 2026-10-12,EME,star
 2026-10-13,EME,star
-2026-09-25,EMR,strong|star
 2026-09-28,EMR,strong|star
 2026-09-29,EMR,strong|star
 2026-09-30,EMR,strong|star
@@ -3331,6 +3324,7 @@ date,yahoo,groups
 2026-11-16,ERIE,strong
 2026-11-17,ERIE,strong
 2026-11-18,ERIE,strong
+2026-11-20,ERIE,strong
 2026-10-22,ES,watch|star
 2026-10-23,ES,star
 2026-10-26,ES,watch|star
@@ -3349,6 +3343,7 @@ date,yahoo,groups
 2026-11-16,ES,strong
 2026-11-17,ES,strong
 2026-11-18,ES,strong
+2026-11-20,ES,strong
 2026-10-21,ESS,watch
 2026-10-22,ESS,strong
 2026-10-23,ESS,strong
@@ -3360,7 +3355,6 @@ date,yahoo,groups
 2026-11-13,ESS,watch
 2026-11-16,ESS,strong
 2026-11-18,ESS,strong
-2026-09-25,ETN,strong
 2026-09-28,ETN,strong|purple|star
 2026-09-29,ETN,strong|purple|star
 2026-09-30,ETN,star
@@ -3573,7 +3567,6 @@ date,yahoo,groups
 2026-10-28,FANG,strong
 2026-10-29,FANG,strong
 2026-10-30,FANG,strong
-2026-09-25,FAST,strong
 2026-09-28,FAST,strong
 2026-10-01,FAST,strong
 2026-10-02,FAST,strong
@@ -3604,7 +3597,6 @@ date,yahoo,groups
 2026-11-12,FAST,strong
 2026-11-13,FAST,strong
 2026-11-16,FAST,strong
-2026-09-25,FCX,pass|mom|strong
 2026-09-28,FCX,pass|mom
 2026-09-29,FCX,pass|mom
 2026-10-02,FCX,strong
@@ -3706,7 +3698,6 @@ date,yahoo,groups
 2026-11-13,FERG,strong
 2026-11-16,FERG,strong
 2026-11-18,FERG,strong
-2026-09-25,FFIV,strong
 2026-09-29,FFIV,strong
 2026-09-30,FFIV,strong
 2026-10-01,FFIV,strong
@@ -3721,7 +3712,6 @@ date,yahoo,groups
 2026-10-21,FFIV,strong
 2026-10-26,FFIV,strong
 2026-10-27,FFIV,strong
-2026-11-19,FFIV,mom
 2026-10-22,FIS,watch|star
 2026-10-23,FIS,star
 2026-10-26,FIS,star
@@ -3766,7 +3756,6 @@ date,yahoo,groups
 2026-11-10,FITB,strong
 2026-11-11,FITB,strong
 2026-11-13,FITB,strong
-2026-09-25,FIX,watch
 2026-09-28,FIX,watch
 2026-09-29,FIX,strong|star
 2026-09-30,FIX,watch
@@ -3776,7 +3765,6 @@ date,yahoo,groups
 2026-10-06,FIX,strong
 2026-10-07,FIX,strong
 2026-10-09,FIX,strong
-2026-09-25,FLEX,watch
 2026-09-28,FLEX,watch
 2026-09-29,FLEX,watch
 2026-10-01,FLEX,watch
@@ -3841,7 +3829,6 @@ date,yahoo,groups
 2026-11-06,FSLR,watch|star
 2026-11-09,FSLR,star
 2026-11-10,FSLR,star
-2026-09-25,FTNT,strong
 2026-09-28,FTNT,strong
 2026-09-29,FTNT,strong
 2026-09-30,FTNT,strong
@@ -3868,6 +3855,7 @@ date,yahoo,groups
 2026-11-17,FTNT,mom
 2026-11-18,FTNT,pass|mom
 2026-11-19,FTNT,pass|mom
+2026-11-20,FTNT,mom
 2026-10-06,FTV,strong
 2026-10-13,FTV,strong
 2026-10-15,FTV,strong
@@ -3933,7 +3921,6 @@ date,yahoo,groups
 2026-11-06,GDDY,strong
 2026-11-11,GDDY,strong
 2026-11-13,GDDY,strong
-2026-09-25,GE,watch
 2026-11-02,GE,star
 2026-11-03,GE,strong|star
 2026-11-04,GE,strong|star
@@ -3990,7 +3977,6 @@ date,yahoo,groups
 2026-11-16,GEN,strong
 2026-11-18,GEN,strong
 2026-11-19,GEN,strong
-2026-09-25,GEV,watch
 2026-09-28,GEV,watch
 2026-09-29,GEV,watch
 2026-09-30,GEV,watch
@@ -4004,7 +3990,6 @@ date,yahoo,groups
 2026-10-12,GEV,strong|star
 2026-10-13,GEV,strong|star
 2026-11-03,GEV,watch
-2026-09-25,GILD,strong
 2026-09-28,GILD,strong
 2026-09-29,GILD,strong
 2026-10-09,GILD,strong
@@ -4039,6 +4024,7 @@ date,yahoo,groups
 2026-11-04,GIS,watch|star
 2026-11-05,GIS,watch|star
 2026-11-16,GIS,watch|star
+2026-11-20,GIS,watch|star
 2026-10-13,GL,watch
 2026-10-14,GL,watch
 2026-10-15,GL,watch
@@ -4051,7 +4037,6 @@ date,yahoo,groups
 2026-11-09,GL,watch
 2026-11-10,GL,watch
 2026-11-11,GL,watch
-2026-09-25,GLW,watch
 2026-09-29,GLW,strong|star
 2026-10-01,GLW,strong|star
 2026-10-02,GLW,strong|star
@@ -4085,7 +4070,6 @@ date,yahoo,groups
 2026-11-12,GM,star
 2026-11-13,GM,star
 2026-11-16,GM,star
-2026-09-25,GNRC,watch|star
 2026-09-29,GNRC,strong|star
 2026-09-30,GNRC,star
 2026-10-01,GNRC,watch|star
@@ -4101,7 +4085,6 @@ date,yahoo,groups
 2026-11-03,GNRC,strong|star
 2026-11-18,GNRC,watch|star
 2026-11-19,GNRC,watch
-2026-09-25,GOOG,watch
 2026-09-30,GOOG,watch
 2026-10-02,GOOG,watch
 2026-10-05,GOOG,strong
@@ -4133,7 +4116,6 @@ date,yahoo,groups
 2026-11-09,GPC,watch
 2026-11-10,GPC,watch
 2026-11-18,GPC,watch
-2026-09-25,GPN,strong
 2026-10-08,GPN,watch
 2026-10-15,GPN,watch
 2026-10-16,GPN,watch
@@ -4152,7 +4134,7 @@ date,yahoo,groups
 2026-11-09,GPN,strong
 2026-11-10,GPN,strong
 2026-11-11,GPN,strong
-2026-09-25,GRMN,strong
+2026-11-20,GPN,strong
 2026-09-28,GRMN,strong|purple|star
 2026-09-29,GRMN,strong|purple|star
 2026-10-05,GRMN,strong
@@ -4251,7 +4233,6 @@ date,yahoo,groups
 2026-10-29,HBAN,watch|star
 2026-11-02,HBAN,watch|star
 2026-11-04,HBAN,watch|star
-2026-09-25,HCA,strong|star
 2026-09-28,HCA,strong|star
 2026-09-29,HCA,strong|star
 2026-09-30,HCA,star
@@ -4328,6 +4309,7 @@ date,yahoo,groups
 2026-11-12,HIG,strong
 2026-11-13,HIG,strong
 2026-11-16,HIG,strong
+2026-11-20,HIG,strong
 2026-10-21,HII,star
 2026-10-22,HII,watch|star
 2026-10-23,HII,star
@@ -4344,7 +4326,6 @@ date,yahoo,groups
 2026-11-11,HII,strong
 2026-11-12,HII,strong
 2026-11-13,HII,strong
-2026-09-25,HLT,watch
 2026-09-28,HLT,strong
 2026-09-29,HLT,strong
 2026-09-30,HLT,strong
@@ -4397,9 +4378,7 @@ date,yahoo,groups
 2026-11-10,HON,strong
 2026-11-11,HON,strong
 2026-11-18,HON,watch|star
-2026-09-25,HOOD,strong
 2026-10-02,HOOD,star
-2026-09-25,HPE,pass|mom|strong|purple|star
 2026-09-28,HPE,pass|mom|strong|purple|star
 2026-09-29,HPE,pass|mom|strong|purple|star
 2026-09-30,HPE,pass|mom|strong|purple|star
@@ -4438,6 +4417,8 @@ date,yahoo,groups
 2026-11-16,HPE,mom
 2026-11-17,HPE,mom
 2026-11-18,HPE,mom
+2026-11-19,HPE,mom
+2026-11-20,HPE,mom
 2026-10-01,HPQ,strong
 2026-10-02,HPQ,strong
 2026-10-07,HPQ,strong
@@ -4471,6 +4452,7 @@ date,yahoo,groups
 2026-11-17,HRL,watch|star
 2026-11-18,HRL,strong
 2026-11-19,HRL,strong
+2026-11-20,HRL,strong
 2026-10-13,HSIC,watch
 2026-10-14,HSIC,watch
 2026-10-15,HSIC,strong
@@ -4484,7 +4466,6 @@ date,yahoo,groups
 2026-11-09,HSIC,strong
 2026-11-10,HSIC,strong
 2026-11-11,HSIC,strong|purple|star
-2026-09-25,HST,watch
 2026-09-28,HST,watch
 2026-09-29,HST,watch
 2026-09-30,HST,watch
@@ -4536,6 +4517,7 @@ date,yahoo,groups
 2026-11-17,HSY,watch|star
 2026-11-18,HSY,watch|star
 2026-11-19,HSY,star
+2026-11-20,HSY,watch|star
 2026-10-01,HUBB,star
 2026-10-02,HUBB,strong|star
 2026-10-05,HUBB,strong|star
@@ -4546,7 +4528,6 @@ date,yahoo,groups
 2026-10-12,HUBB,watch|star
 2026-10-13,HUBB,strong|star
 2026-10-14,HUBB,star
-2026-09-25,HUM,strong
 2026-09-28,HUM,strong
 2026-10-02,HUM,strong
 2026-10-05,HUM,strong|purple|star
@@ -4574,7 +4555,6 @@ date,yahoo,groups
 2026-11-13,HUM,strong
 2026-11-16,HUM,strong
 2026-11-17,HUM,strong
-2026-11-19,HUM,mom
 2026-11-03,HWM,star
 2026-11-11,HWM,watch|star
 2026-11-12,HWM,star
@@ -4650,7 +4630,6 @@ date,yahoo,groups
 2026-11-17,IDXX,strong
 2026-11-18,IDXX,strong
 2026-11-19,IDXX,strong
-2026-09-25,IEX,strong
 2026-09-28,IEX,strong
 2026-09-29,IEX,strong
 2026-09-30,IEX,strong
@@ -4677,7 +4656,6 @@ date,yahoo,groups
 2026-11-11,IEX,strong
 2026-11-12,IEX,strong
 2026-11-13,IEX,strong|star
-2026-09-25,IFF,strong
 2026-09-28,IFF,strong
 2026-09-29,IFF,strong
 2026-10-07,IFF,strong
@@ -4698,7 +4676,6 @@ date,yahoo,groups
 2026-10-30,IFF,strong
 2026-11-02,IFF,strong
 2026-11-03,IFF,strong
-2026-09-25,ILMN,pass|mom|strong
 2026-09-28,ILMN,pass|mom|strong
 2026-09-29,ILMN,pass|mom|strong|star
 2026-09-30,ILMN,pass|mom|strong|star
@@ -4738,6 +4715,7 @@ date,yahoo,groups
 2026-11-17,ILMN,mom
 2026-11-18,ILMN,mom
 2026-11-19,ILMN,mom
+2026-11-20,ILMN,mom
 2026-09-28,INCY,strong
 2026-10-20,INCY,watch
 2026-10-22,INCY,watch
@@ -4755,7 +4733,6 @@ date,yahoo,groups
 2026-11-11,INCY,strong|star
 2026-11-12,INCY,strong
 2026-11-13,INCY,strong
-2026-09-25,INTC,pass|mom|strong
 2026-09-28,INTC,pass|mom|strong
 2026-09-29,INTC,pass|mom|strong
 2026-09-30,INTC,pass|mom|strong
@@ -4795,6 +4772,7 @@ date,yahoo,groups
 2026-11-17,INTC,mom
 2026-11-18,INTC,mom
 2026-11-19,INTC,mom
+2026-11-20,INTC,mom
 2026-10-14,INTU,watch
 2026-10-15,INTU,watch|star
 2026-10-16,INTU,star
@@ -4828,7 +4806,6 @@ date,yahoo,groups
 2026-11-05,IP,star
 2026-11-09,IP,watch|star
 2026-11-10,IP,watch
-2026-09-25,IQV,strong
 2026-09-28,IQV,strong
 2026-10-05,IQV,strong
 2026-10-14,IQV,strong
@@ -4889,7 +4866,6 @@ date,yahoo,groups
 2026-11-12,IRM,strong
 2026-11-13,IRM,star
 2026-11-16,IRM,star
-2026-09-25,ISRG,watch|star
 2026-09-28,ISRG,watch|star
 2026-09-29,ISRG,watch|star
 2026-09-30,ISRG,star
@@ -4919,7 +4895,6 @@ date,yahoo,groups
 2026-11-05,ISRG,strong
 2026-11-06,ISRG,strong
 2026-11-09,ISRG,strong
-2026-09-25,IT,watch|star
 2026-09-28,IT,watch|star
 2026-09-29,IT,watch|star
 2026-09-30,IT,watch|star
@@ -4943,7 +4918,6 @@ date,yahoo,groups
 2026-10-29,IT,strong
 2026-10-30,IT,strong
 2026-11-02,IT,strong
-2026-09-25,ITW,watch
 2026-09-28,ITW,watch
 2026-10-14,ITW,watch
 2026-10-15,ITW,strong
@@ -5008,14 +4982,12 @@ date,yahoo,groups
 2026-11-18,J,strong
 2026-10-05,JBHT,mom
 2026-11-16,JBHT,star
-2026-09-25,JBL,watch
 2026-09-28,JBL,strong
 2026-09-29,JBL,strong|star
 2026-10-06,JBL,watch
 2026-10-09,JBL,watch
 2026-10-12,JBL,watch
 2026-10-13,JBL,strong|star
-2026-09-25,JCI,strong|purple|star
 2026-09-28,JCI,strong|purple|star
 2026-09-29,JCI,strong|purple|star
 2026-09-30,JCI,strong|purple|star
@@ -5059,7 +5031,6 @@ date,yahoo,groups
 2026-11-16,JKHY,strong
 2026-11-17,JKHY,strong
 2026-11-18,JKHY,strong
-2026-09-25,JNJ,strong
 2026-09-28,JNJ,strong
 2026-10-09,JNJ,watch
 2026-10-12,JNJ,strong
@@ -5102,7 +5073,6 @@ date,yahoo,groups
 2026-11-11,JPM,strong
 2026-11-12,JPM,strong
 2026-11-13,JPM,strong
-2026-09-25,KDP,strong
 2026-10-06,KDP,watch
 2026-10-08,KDP,strong
 2026-10-09,KDP,strong
@@ -5144,7 +5114,6 @@ date,yahoo,groups
 2026-11-11,KEY,strong
 2026-11-12,KEY,strong
 2026-11-13,KEY,strong
-2026-09-25,KEYS,strong
 2026-09-28,KEYS,strong
 2026-09-29,KEYS,strong
 2026-09-30,KEYS,strong
@@ -5180,6 +5149,8 @@ date,yahoo,groups
 2026-11-16,KHC,strong
 2026-11-17,KHC,strong
 2026-11-18,KHC,strong
+2026-11-19,KHC,strong
+2026-11-20,KHC,strong
 2026-10-22,KIM,strong|star
 2026-10-23,KIM,strong
 2026-10-26,KIM,strong
@@ -5211,7 +5182,6 @@ date,yahoo,groups
 2026-11-11,KKR,watch|star
 2026-11-12,KKR,star
 2026-11-13,KKR,watch|star
-2026-09-25,KLAC,watch
 2026-09-28,KLAC,strong|star
 2026-09-29,KLAC,strong|purple|star
 2026-09-30,KLAC,strong|purple|star
@@ -5461,7 +5431,6 @@ date,yahoo,groups
 2026-11-12,LIN,strong
 2026-11-13,LIN,strong
 2026-11-16,LIN,strong
-2026-09-25,LITE,pass|mom|strong
 2026-09-28,LITE,pass|mom
 2026-09-29,LITE,pass|mom|strong
 2026-09-30,LITE,pass|mom|strong
@@ -5500,7 +5469,8 @@ date,yahoo,groups
 2026-11-16,LITE,mom
 2026-11-17,LITE,mom
 2026-11-18,LITE,mom
-2026-09-25,LLY,strong|star
+2026-11-19,LITE,mom
+2026-11-20,LITE,mom
 2026-09-28,LLY,strong
 2026-09-29,LLY,strong
 2026-10-06,LLY,watch
@@ -5594,7 +5564,6 @@ date,yahoo,groups
 2026-11-12,LOW,strong
 2026-11-13,LOW,strong
 2026-11-16,LOW,strong
-2026-09-25,LRCX,pass|mom|strong
 2026-09-28,LRCX,pass|mom|strong
 2026-09-29,LRCX,pass|mom|strong|purple|star
 2026-09-30,LRCX,pass|mom|strong|purple|star
@@ -5630,7 +5599,6 @@ date,yahoo,groups
 2026-11-06,LULU,watch|star
 2026-11-09,LULU,watch|star
 2026-11-18,LULU,watch|star
-2026-09-25,LUV,strong|star
 2026-09-28,LUV,strong|star
 2026-09-29,LUV,watch
 2026-09-30,LUV,star
@@ -5670,6 +5638,7 @@ date,yahoo,groups
 2026-11-13,LVS,watch|star
 2026-11-16,LVS,star
 2026-11-17,LVS,star
+2026-11-20,LVS,star
 2026-10-15,LYB,strong|star
 2026-10-16,LYB,strong|star
 2026-10-19,LYB,strong|star
@@ -5686,7 +5655,6 @@ date,yahoo,groups
 2026-11-03,LYB,strong
 2026-11-12,LYB,strong
 2026-11-13,LYB,strong
-2026-09-25,LYV,watch
 2026-09-28,LYV,watch
 2026-09-29,LYV,watch
 2026-10-05,LYV,watch
@@ -5713,7 +5681,6 @@ date,yahoo,groups
 2026-11-13,LYV,strong
 2026-11-18,LYV,strong
 2026-11-19,LYV,strong
-2026-09-25,MA,strong
 2026-09-28,MA,strong
 2026-10-05,MA,strong
 2026-10-06,MA,strong
@@ -5746,7 +5713,6 @@ date,yahoo,groups
 2026-11-16,MA,strong
 2026-11-04,MAA,watch|star
 2026-11-05,MAA,watch
-2026-09-25,MAR,strong|star
 2026-09-28,MAR,strong|star
 2026-09-29,MAR,strong|star
 2026-09-30,MAR,strong|star
@@ -5830,7 +5796,7 @@ date,yahoo,groups
 2026-11-16,MCD,strong
 2026-11-17,MCD,strong
 2026-11-18,MCD,strong
-2026-09-25,MCHP,strong|star
+2026-11-20,MCD,watch|star
 2026-09-28,MCHP,strong|purple|star
 2026-09-29,MCHP,strong|purple|star
 2026-09-30,MCHP,strong|purple|star
@@ -5880,6 +5846,7 @@ date,yahoo,groups
 2026-11-16,MCK,strong
 2026-11-17,MCK,strong
 2026-11-18,MCK,strong
+2026-11-20,MCK,star
 2026-10-15,MCO,strong|star
 2026-10-16,MCO,strong|star
 2026-10-19,MCO,strong|star
@@ -5958,7 +5925,6 @@ date,yahoo,groups
 2026-11-13,MDT,strong
 2026-11-16,MDT,strong
 2026-11-17,MDT,strong
-2026-09-25,MET,strong
 2026-10-05,MET,strong
 2026-10-06,MET,strong
 2026-10-08,MET,strong
@@ -5981,7 +5947,6 @@ date,yahoo,groups
 2026-11-11,MET,strong
 2026-11-12,MET,strong
 2026-11-13,MET,strong
-2026-09-25,META,strong
 2026-09-29,META,strong
 2026-09-30,META,strong
 2026-10-01,META,strong
@@ -6004,6 +5969,7 @@ date,yahoo,groups
 2026-11-17,MGM,watch|star
 2026-11-18,MGM,watch|star
 2026-11-19,MGM,watch|star
+2026-11-20,MGM,star
 2026-10-22,MKC,watch|star
 2026-11-02,MKC,watch|star
 2026-11-04,MKC,watch|star
@@ -6021,7 +5987,6 @@ date,yahoo,groups
 2026-11-04,MLM,strong
 2026-11-09,MLM,watch|star
 2026-11-18,MLM,watch|star
-2026-09-25,MMM,strong
 2026-09-28,MMM,strong
 2026-09-29,MMM,watch
 2026-10-14,MMM,watch
@@ -6143,7 +6108,7 @@ date,yahoo,groups
 2026-11-17,MPC,mom
 2026-11-18,MPC,mom
 2026-11-19,MPC,mom
-2026-09-25,MPWR,strong
+2026-11-20,MPC,mom
 2026-09-28,MPWR,strong|star
 2026-09-29,MPWR,strong|star
 2026-09-30,MPWR,strong|star
@@ -6161,7 +6126,6 @@ date,yahoo,groups
 2026-11-11,MPWR,strong
 2026-11-12,MPWR,strong
 2026-11-13,MPWR,strong
-2026-09-25,MRK,strong
 2026-09-28,MRK,strong
 2026-09-29,MRK,strong
 2026-10-09,MRK,strong
@@ -6181,7 +6145,6 @@ date,yahoo,groups
 2026-11-09,MRK,strong
 2026-11-10,MRK,strong
 2026-11-13,MRK,strong
-2026-09-25,MRNA,pass|mom|strong
 2026-09-28,MRNA,pass|mom|strong
 2026-09-29,MRNA,pass|mom|strong
 2026-09-30,MRNA,pass|mom|strong
@@ -6220,6 +6183,8 @@ date,yahoo,groups
 2026-11-16,MRNA,pass|mom
 2026-11-17,MRNA,pass|mom
 2026-11-18,MRNA,mom
+2026-11-19,MRNA,mom
+2026-11-20,MRNA,mom
 2026-10-14,MRSH,watch|star
 2026-10-15,MRSH,strong|star
 2026-10-16,MRSH,strong|star
@@ -6245,7 +6210,7 @@ date,yahoo,groups
 2026-11-13,MRSH,strong
 2026-11-16,MRSH,strong
 2026-11-17,MRSH,strong
-2026-09-25,MRVL,pass|mom|strong|purple|star
+2026-11-20,MRSH,strong
 2026-09-28,MRVL,pass|mom|strong|purple|star
 2026-09-29,MRVL,pass|mom|strong|purple|star
 2026-09-30,MRVL,pass|mom|strong|purple|star
@@ -6285,6 +6250,7 @@ date,yahoo,groups
 2026-11-17,MRVL,mom
 2026-11-18,MRVL,mom
 2026-11-19,MRVL,mom
+2026-11-20,MRVL,mom
 2026-11-04,MS,watch
 2026-11-11,MS,star
 2026-11-13,MS,star
@@ -6313,7 +6279,6 @@ date,yahoo,groups
 2026-11-12,MSCI,strong
 2026-11-13,MSCI,strong
 2026-11-16,MSCI,strong
-2026-09-25,MSFT,strong
 2026-09-28,MSFT,strong
 2026-09-29,MSFT,strong
 2026-09-30,MSFT,strong
@@ -6371,7 +6336,6 @@ date,yahoo,groups
 2026-11-02,MTB,watch
 2026-11-04,MTB,watch
 2026-11-09,MTB,watch
-2026-09-25,MTD,strong|star
 2026-09-28,MTD,strong|star
 2026-09-29,MTD,strong|star
 2026-09-30,MTD,strong|star
@@ -6408,7 +6372,6 @@ date,yahoo,groups
 2026-11-13,MTD,strong
 2026-11-16,MTD,strong
 2026-11-18,MTD,strong
-2026-09-25,MU,pass|mom|strong
 2026-09-28,MU,pass|mom|strong
 2026-09-29,MU,pass|mom|strong
 2026-09-30,MU,pass|mom|strong
@@ -6448,6 +6411,7 @@ date,yahoo,groups
 2026-11-17,MU,mom
 2026-11-18,MU,mom
 2026-11-19,MU,mom
+2026-11-20,MU,mom
 2026-10-12,NCLH,star
 2026-10-13,NCLH,star
 2026-10-15,NCLH,star
@@ -6489,7 +6453,6 @@ date,yahoo,groups
 2026-11-12,NDAQ,strong
 2026-11-13,NDAQ,strong
 2026-11-16,NDAQ,strong
-2026-09-25,NDSN,strong
 2026-09-28,NDSN,strong
 2026-09-29,NDSN,strong|star
 2026-09-30,NDSN,strong|star
@@ -6641,7 +6604,6 @@ date,yahoo,groups
 2026-11-03,NSC,strong
 2026-11-04,NSC,strong
 2026-11-12,NSC,strong
-2026-09-25,NTAP,strong|star
 2026-09-28,NTAP,strong|star
 2026-09-29,NTAP,strong|star
 2026-09-30,NTAP,strong|star
@@ -6662,7 +6624,7 @@ date,yahoo,groups
 2026-11-11,NTAP,mom
 2026-11-12,NTAP,mom
 2026-11-13,NTAP,mom
-2026-11-19,NTAP,mom
+2026-11-20,NTAP,mom
 2026-10-21,NTRS,watch
 2026-10-23,NTRS,watch
 2026-10-26,NTRS,watch
@@ -6702,7 +6664,6 @@ date,yahoo,groups
 2026-11-03,NUE,strong
 2026-11-11,NUE,strong
 2026-11-12,NUE,strong
-2026-09-25,NVDA,strong
 2026-09-28,NVDA,strong
 2026-09-29,NVDA,strong
 2026-09-30,NVDA,strong
@@ -6752,7 +6713,6 @@ date,yahoo,groups
 2026-10-23,NWSA,strong|star
 2026-10-26,NWSA,strong
 2026-11-04,NWSA,strong
-2026-09-25,NXPI,star
 2026-09-28,NXPI,star
 2026-09-29,NXPI,star
 2026-09-30,NXPI,star
@@ -6813,7 +6773,6 @@ date,yahoo,groups
 2026-10-29,OKE,strong|star
 2026-10-30,OKE,strong|star
 2026-11-13,OKE,watch
-2026-09-25,OKTA,strong|star
 2026-09-28,OKTA,strong
 2026-09-29,OKTA,strong
 2026-09-30,OKTA,strong
@@ -6852,6 +6811,8 @@ date,yahoo,groups
 2026-11-16,OKTA,mom
 2026-11-17,OKTA,mom
 2026-11-18,OKTA,pass|mom|strong
+2026-11-19,OKTA,pass|mom|strong
+2026-11-20,OKTA,pass|mom|strong
 2026-10-15,OMC,strong|star
 2026-10-16,OMC,strong|star
 2026-10-19,OMC,strong|star
@@ -6876,6 +6837,7 @@ date,yahoo,groups
 2026-11-16,OMC,strong
 2026-11-17,OMC,strong
 2026-11-18,OMC,strong
+2026-11-20,OMC,star
 2026-09-29,ON,star
 2026-09-30,ON,star
 2026-10-01,ON,strong|star
@@ -6908,6 +6870,7 @@ date,yahoo,groups
 2026-11-17,ORLY,strong
 2026-11-18,ORLY,strong
 2026-11-19,ORLY,strong
+2026-11-20,ORLY,strong
 2026-10-14,OTIS,watch|star
 2026-10-15,OTIS,watch|star
 2026-10-16,OTIS,watch|star
@@ -6956,7 +6919,6 @@ date,yahoo,groups
 2026-10-30,OXY,strong
 2026-11-12,OXY,watch
 2026-11-13,OXY,watch
-2026-09-25,P,strong|star
 2026-09-28,P,strong|star
 2026-09-29,P,strong|star
 2026-09-30,P,strong|star
@@ -6975,7 +6937,6 @@ date,yahoo,groups
 2026-10-28,P,strong
 2026-10-29,P,strong
 2026-11-12,P,watch
-2026-09-25,PANW,strong|purple|star
 2026-09-28,PANW,strong|purple|star
 2026-09-29,PANW,strong|purple|star
 2026-09-30,PANW,strong|star
@@ -6993,6 +6954,8 @@ date,yahoo,groups
 2026-10-28,PANW,strong|star
 2026-10-29,PANW,strong
 2026-11-18,PANW,watch
+2026-11-19,PANW,strong
+2026-11-20,PANW,watch
 2026-10-15,PAYX,strong
 2026-10-16,PAYX,strong
 2026-10-19,PAYX,strong
@@ -7019,6 +6982,7 @@ date,yahoo,groups
 2026-11-17,PCG,star
 2026-11-18,PCG,watch|star
 2026-11-19,PCG,watch|star
+2026-11-20,PCG,star
 2026-10-07,PEG,star
 2026-10-08,PEG,star
 2026-10-09,PEG,watch|star
@@ -7060,7 +7024,6 @@ date,yahoo,groups
 2026-11-12,PEP,strong
 2026-11-13,PEP,strong
 2026-11-16,PEP,strong
-2026-09-25,PFE,strong
 2026-09-28,PFE,strong
 2026-09-29,PFE,strong
 2026-09-30,PFE,strong
@@ -7130,6 +7093,7 @@ date,yahoo,groups
 2026-11-16,PG,strong
 2026-11-17,PG,strong
 2026-11-18,PG,strong
+2026-11-20,PG,strong
 2026-10-07,PGR,watch|star
 2026-10-08,PGR,strong|star
 2026-10-09,PGR,strong|star
@@ -7156,7 +7120,6 @@ date,yahoo,groups
 2026-11-13,PGR,strong
 2026-11-16,PGR,strong
 2026-11-17,PGR,strong
-2026-09-25,PH,strong
 2026-09-28,PH,watch
 2026-09-29,PH,watch
 2026-10-01,PH,watch
@@ -7192,7 +7155,6 @@ date,yahoo,groups
 2026-11-11,PHM,star
 2026-11-12,PHM,star
 2026-11-13,PHM,star
-2026-09-25,PKG,watch
 2026-10-13,PKG,watch
 2026-10-15,PKG,watch
 2026-10-16,PKG,strong
@@ -7212,7 +7174,6 @@ date,yahoo,groups
 2026-11-09,PKG,strong
 2026-11-10,PKG,strong
 2026-11-11,PKG,strong
-2026-09-25,PLTR,strong|star
 2026-09-28,PLTR,strong|star
 2026-09-29,PLTR,strong|star
 2026-09-30,PLTR,strong|star
@@ -7230,7 +7191,6 @@ date,yahoo,groups
 2026-10-21,PLTR,strong
 2026-10-26,PLTR,strong
 2026-10-27,PLTR,strong
-2026-09-25,PM,strong
 2026-09-28,PM,strong|star
 2026-09-29,PM,strong|purple|star
 2026-10-06,PM,strong
@@ -7281,6 +7241,7 @@ date,yahoo,groups
 2026-11-16,PNR,watch|star
 2026-11-18,PNR,watch|star
 2026-11-19,PNR,watch|star
+2026-11-20,PNR,watch
 2026-10-06,PNW,watch|star
 2026-10-07,PNW,watch|star
 2026-10-08,PNW,watch|star
@@ -7368,7 +7329,6 @@ date,yahoo,groups
 2026-11-10,PPL,strong
 2026-11-13,PPL,strong
 2026-11-16,PPL,strong
-2026-09-25,PRU,strong
 2026-10-15,PRU,strong
 2026-10-16,PRU,watch
 2026-10-20,PRU,watch
@@ -7436,6 +7396,8 @@ date,yahoo,groups
 2026-11-16,PSX,mom
 2026-11-17,PSX,mom
 2026-11-18,PSX,mom
+2026-11-19,PSX,mom
+2026-11-20,PSX,mom
 2026-09-28,PTC,watch|star
 2026-09-30,PTC,watch
 2026-10-01,PTC,watch|star
@@ -7472,7 +7434,6 @@ date,yahoo,groups
 2026-11-16,PTC,strong
 2026-11-17,PTC,strong
 2026-11-18,PTC,strong
-2026-09-25,PWR,strong
 2026-09-28,PWR,strong
 2026-09-29,PWR,strong
 2026-09-30,PWR,watch
@@ -7492,7 +7453,6 @@ date,yahoo,groups
 2026-11-03,PWR,strong
 2026-11-11,PWR,watch
 2026-11-12,PWR,watch
-2026-09-25,PYPL,strong
 2026-09-28,PYPL,watch
 2026-09-29,PYPL,watch
 2026-10-05,PYPL,strong
@@ -7536,7 +7496,6 @@ date,yahoo,groups
 2026-11-09,Q,strong|star
 2026-11-10,Q,watch
 2026-11-11,Q,strong
-2026-09-25,QCOM,strong
 2026-10-15,QCOM,watch
 2026-10-21,QCOM,watch
 2026-10-23,QCOM,watch
@@ -7653,7 +7612,6 @@ date,yahoo,groups
 2026-11-12,RJF,strong
 2026-11-13,RJF,strong
 2026-11-16,RJF,strong
-2026-09-25,RL,watch
 2026-09-28,RL,watch
 2026-10-01,RL,strong|star
 2026-10-02,RL,strong|star
@@ -7704,7 +7662,6 @@ date,yahoo,groups
 2026-11-12,RMD,strong
 2026-11-13,RMD,strong
 2026-11-18,RMD,strong|star
-2026-09-25,ROK,watch
 2026-09-28,ROK,watch
 2026-09-29,ROK,watch
 2026-09-30,ROK,strong|star
@@ -7761,7 +7718,6 @@ date,yahoo,groups
 2026-11-12,ROP,strong
 2026-11-13,ROP,strong
 2026-11-16,ROP,strong
-2026-09-25,ROST,strong
 2026-09-28,ROST,strong
 2026-09-29,ROST,strong
 2026-09-30,ROST,strong
@@ -7833,7 +7789,6 @@ date,yahoo,groups
 2026-11-13,RTX,strong
 2026-11-17,RTX,strong
 2026-11-18,RTX,strong
-2026-09-25,RVTY,strong
 2026-09-28,RVTY,strong
 2026-09-29,RVTY,strong
 2026-09-30,RVTY,strong|purple|star
@@ -7953,6 +7908,7 @@ date,yahoo,groups
 2026-11-16,SJM,strong
 2026-11-17,SJM,strong
 2026-11-18,SJM,strong
+2026-11-20,SJM,strong
 2026-09-30,SKYD,watch|star
 2026-10-16,SLB,watch
 2026-10-20,SLB,watch
@@ -7967,7 +7923,6 @@ date,yahoo,groups
 2026-11-03,SLB,star
 2026-11-04,SLB,star
 2026-11-13,SLB,strong
-2026-09-25,SMCI,strong
 2026-09-28,SMCI,strong
 2026-09-29,SMCI,strong
 2026-09-30,SMCI,strong
@@ -7984,7 +7939,6 @@ date,yahoo,groups
 2026-11-09,SNA,strong
 2026-11-10,SNA,watch
 2026-11-11,SNA,strong
-2026-09-25,SNDK,pass|mom|strong|purple|star
 2026-09-28,SNDK,pass|mom
 2026-09-29,SNDK,pass|mom
 2026-09-30,SNDK,pass|mom|strong
@@ -8024,7 +7978,6 @@ date,yahoo,groups
 2026-11-17,SNDK,mom
 2026-11-18,SNDK,mom
 2026-11-19,SNDK,mom
-2026-09-25,SNPS,watch|star
 2026-09-28,SNPS,star
 2026-09-29,SNPS,watch|star
 2026-09-30,SNPS,watch|star
@@ -8072,7 +8025,6 @@ date,yahoo,groups
 2026-11-16,SO,strong
 2026-11-17,SO,strong
 2026-11-18,SO,strong
-2026-09-25,SOLV,strong
 2026-09-28,SOLV,strong
 2026-09-29,SOLV,strong
 2026-10-14,SOLV,strong
@@ -8178,6 +8130,7 @@ date,yahoo,groups
 2026-11-16,STE,strong
 2026-11-17,STE,strong
 2026-11-18,STE,strong
+2026-11-20,STE,strong
 2026-10-02,STLD,watch
 2026-10-05,STLD,strong
 2026-10-06,STLD,strong
@@ -8213,7 +8166,6 @@ date,yahoo,groups
 2026-11-11,STT,watch
 2026-11-12,STT,watch
 2026-11-13,STT,watch
-2026-09-25,STX,pass|mom|strong
 2026-09-28,STX,pass|mom|strong|purple|star
 2026-09-29,STX,pass|mom|strong|purple|star
 2026-09-30,STX,pass|mom|strong|purple|star
@@ -8253,6 +8205,7 @@ date,yahoo,groups
 2026-11-17,STX,mom
 2026-11-18,STX,mom
 2026-11-19,STX,mom
+2026-11-20,STX,mom
 2026-10-12,STZ,watch
 2026-10-13,STZ,watch|star
 2026-10-14,STZ,watch|star
@@ -8278,7 +8231,6 @@ date,yahoo,groups
 2026-11-16,STZ,strong
 2026-11-17,STZ,strong
 2026-11-18,STZ,strong
-2026-09-25,SW,strong|star
 2026-11-02,SW,watch|star
 2026-11-03,SW,watch
 2026-11-04,SW,strong
@@ -8288,7 +8240,6 @@ date,yahoo,groups
 2026-11-10,SW,strong|star
 2026-11-11,SW,strong|star
 2026-11-12,SW,star
-2026-09-25,SWK,watch
 2026-10-02,SWK,watch
 2026-10-13,SWK,watch
 2026-10-14,SWK,watch
@@ -8315,7 +8266,6 @@ date,yahoo,groups
 2026-11-12,SWK,strong
 2026-11-13,SWK,strong
 2026-11-16,SWK,strong
-2026-09-25,SWKS,strong
 2026-09-28,SWKS,strong
 2026-09-29,SWKS,strong
 2026-10-16,SWKS,strong
@@ -8376,6 +8326,7 @@ date,yahoo,groups
 2026-10-29,SYY,strong
 2026-10-30,SYY,strong
 2026-11-18,T,star
+2026-11-20,T,star
 2026-10-19,TDG,star
 2026-10-29,TDG,watch|star
 2026-11-02,TDG,watch|star
@@ -8386,7 +8337,6 @@ date,yahoo,groups
 2026-11-10,TDG,strong
 2026-11-11,TDG,strong
 2026-11-13,TDG,strong
-2026-09-25,TDY,watch
 2026-10-02,TDY,watch
 2026-10-05,TDY,watch
 2026-10-06,TDY,watch
@@ -8412,7 +8362,6 @@ date,yahoo,groups
 2026-11-12,TDY,strong
 2026-11-13,TDY,strong|star
 2026-11-16,TDY,star
-2026-09-25,TECH,strong
 2026-09-28,TECH,strong
 2026-09-30,TECH,strong
 2026-10-05,TECH,strong
@@ -8441,7 +8390,6 @@ date,yahoo,groups
 2026-11-13,TECH,strong
 2026-11-16,TECH,strong
 2026-11-18,TECH,strong
-2026-09-25,TEL,strong
 2026-09-28,TEL,strong
 2026-09-29,TEL,strong
 2026-10-01,TEL,strong
@@ -8462,7 +8410,6 @@ date,yahoo,groups
 2026-11-10,TEL,strong
 2026-11-11,TEL,strong
 2026-11-12,TEL,strong
-2026-09-25,TER,pass|mom|strong
 2026-09-28,TER,pass|mom|strong|purple|star
 2026-09-29,TER,pass|mom|strong|purple|star
 2026-09-30,TER,pass|mom|strong|purple|star
@@ -8496,7 +8443,6 @@ date,yahoo,groups
 2026-11-10,TER,mom
 2026-11-11,TER,pass|mom
 2026-11-12,TER,pass|mom
-2026-11-19,TER,mom
 2026-10-22,TFC,watch|star
 2026-10-23,TFC,watch|star
 2026-10-26,TFC,strong|star
@@ -8534,6 +8480,7 @@ date,yahoo,groups
 2026-11-17,TGT,star
 2026-11-18,TGT,strong|purple|star
 2026-11-19,TGT,strong|purple|star
+2026-11-20,TGT,strong|star
 2026-10-06,TJX,star
 2026-10-07,TJX,watch|star
 2026-10-08,TJX,watch|star
@@ -8549,6 +8496,7 @@ date,yahoo,groups
 2026-11-04,TJX,watch|star
 2026-11-18,TJX,watch|star
 2026-11-19,TJX,watch
+2026-11-20,TJX,watch
 2026-11-02,TKO,watch|star
 2026-11-03,TKO,watch|star
 2026-11-04,TKO,strong|star
@@ -8561,7 +8509,6 @@ date,yahoo,groups
 2026-11-13,TKO,strong|star
 2026-11-16,TKO,star
 2026-11-17,TKO,star
-2026-09-25,TMO,strong
 2026-09-28,TMO,strong
 2026-09-29,TMO,strong|star
 2026-09-30,TMO,strong|star
@@ -8597,6 +8544,7 @@ date,yahoo,groups
 2026-11-17,TMUS,star
 2026-11-18,TMUS,star
 2026-11-19,TMUS,star
+2026-11-20,TMUS,watch|star
 2026-10-12,TPL,watch|star
 2026-10-13,TPL,watch|star
 2026-10-15,TPR,star
@@ -8617,6 +8565,7 @@ date,yahoo,groups
 2026-11-17,TPR,star
 2026-11-18,TPR,star
 2026-11-19,TPR,star
+2026-11-20,TPR,star
 2026-10-02,TRGP,strong
 2026-10-05,TRGP,strong
 2026-10-06,TRGP,strong
@@ -8721,6 +8670,7 @@ date,yahoo,groups
 2026-11-17,TSCO,strong|purple|star
 2026-11-18,TSCO,strong|purple|star
 2026-11-19,TSCO,strong|purple|star
+2026-11-20,TSCO,strong|purple|star
 2026-10-02,TSLA,watch|star
 2026-10-05,TSLA,strong
 2026-10-06,TSLA,strong
@@ -8769,7 +8719,7 @@ date,yahoo,groups
 2026-11-17,TSN,strong
 2026-11-18,TSN,strong
 2026-11-19,TSN,strong
-2026-09-25,TT,strong
+2026-11-20,TSN,strong
 2026-09-28,TT,strong|star
 2026-09-29,TT,strong|star
 2026-09-30,TT,strong|star
@@ -8797,7 +8747,6 @@ date,yahoo,groups
 2026-11-16,TTWO,star
 2026-11-17,TTWO,star
 2026-11-18,TTWO,watch|star
-2026-09-25,TWLO,pass|mom|strong
 2026-09-28,TWLO,pass|mom|strong
 2026-09-29,TWLO,pass|mom|strong
 2026-09-30,TWLO,pass|mom|strong
@@ -8832,7 +8781,8 @@ date,yahoo,groups
 2026-11-16,TWLO,mom
 2026-11-17,TWLO,mom
 2026-11-18,TWLO,mom
-2026-09-25,TXN,strong|purple|star
+2026-11-19,TWLO,mom
+2026-11-20,TWLO,mom
 2026-09-28,TXN,strong|star
 2026-09-29,TXN,strong|purple|star
 2026-09-30,TXN,strong
@@ -8858,7 +8808,6 @@ date,yahoo,groups
 2026-11-11,TXN,strong|star
 2026-11-12,TXN,strong|star
 2026-11-13,TXN,strong|star
-2026-11-19,TXN,mom
 2026-10-28,TXT,star
 2026-10-29,TXT,strong|star
 2026-10-30,TXT,strong|star
@@ -8896,7 +8845,6 @@ date,yahoo,groups
 2026-11-12,TYL,strong
 2026-11-13,TYL,strong
 2026-11-16,TYL,strong
-2026-09-25,UAL,strong
 2026-09-28,UAL,watch
 2026-09-29,UAL,watch
 2026-09-30,UAL,star
@@ -8935,7 +8883,6 @@ date,yahoo,groups
 2026-11-11,UDR,watch
 2026-11-13,UDR,watch
 2026-11-16,UDR,watch
-2026-09-25,UHS,strong|star
 2026-10-06,UHS,strong
 2026-10-09,UHS,strong
 2026-10-12,UHS,strong
@@ -9067,7 +9014,6 @@ date,yahoo,groups
 2026-11-13,UPS,strong
 2026-11-16,UPS,strong
 2026-11-18,UPS,strong
-2026-09-25,URI,strong
 2026-09-28,URI,watch
 2026-10-01,URI,watch
 2026-10-02,URI,strong|star
@@ -9142,7 +9088,6 @@ date,yahoo,groups
 2026-11-11,V,strong
 2026-11-13,V,strong
 2026-11-16,V,strong
-2026-09-25,VEEV,strong
 2026-09-28,VEEV,strong
 2026-09-29,VEEV,strong
 2026-09-30,VEEV,strong
@@ -9178,7 +9123,6 @@ date,yahoo,groups
 2026-11-12,VICI,watch
 2026-11-13,VICI,watch
 2026-11-16,VICI,watch
-2026-09-25,VLO,strong
 2026-09-28,VLO,strong
 2026-09-29,VLO,strong
 2026-09-30,VLO,pass|mom|strong
@@ -9218,7 +9162,7 @@ date,yahoo,groups
 2026-11-17,VLO,mom
 2026-11-18,VLO,mom
 2026-11-19,VLO,mom
-2026-09-25,VLTO,strong
+2026-11-20,VLO,mom
 2026-09-28,VLTO,strong
 2026-09-29,VLTO,strong
 2026-10-05,VLTO,strong
@@ -9335,7 +9279,6 @@ date,yahoo,groups
 2026-11-13,VRSN,strong
 2026-10-28,VRT,watch|star
 2026-10-29,VRT,watch|star
-2026-09-25,VRTX,strong
 2026-09-28,VRTX,strong
 2026-09-29,VRTX,strong
 2026-09-30,VRTX,strong
@@ -9388,7 +9331,7 @@ date,yahoo,groups
 2026-11-17,VTR,star
 2026-11-18,VTR,star
 2026-11-19,VTR,star
-2026-09-25,VTRS,strong
+2026-11-20,VTR,star
 2026-09-28,VTRS,strong
 2026-09-29,VTRS,strong
 2026-09-30,VTRS,strong
@@ -9429,7 +9372,7 @@ date,yahoo,groups
 2026-11-13,VZ,strong
 2026-11-16,VZ,strong
 2026-11-18,VZ,strong
-2026-09-25,WAB,strong
+2026-11-20,VZ,strong
 2026-09-28,WAB,strong
 2026-09-29,WAB,strong
 2026-10-01,WAB,strong
@@ -9454,7 +9397,6 @@ date,yahoo,groups
 2026-11-16,WAB,star
 2026-11-17,WAB,star
 2026-11-18,WAB,star
-2026-09-25,WAT,strong
 2026-09-28,WAT,strong
 2026-09-29,WAT,strong
 2026-09-30,WAT,strong
@@ -9495,7 +9437,6 @@ date,yahoo,groups
 2026-11-04,WDAY,strong
 2026-11-05,WDAY,strong
 2026-11-13,WDAY,strong
-2026-09-25,WDC,pass|mom|watch
 2026-09-28,WDC,pass|mom|watch
 2026-09-29,WDC,pass|mom|watch
 2026-09-30,WDC,pass|mom|watch
@@ -9535,6 +9476,7 @@ date,yahoo,groups
 2026-11-17,WDC,mom
 2026-11-18,WDC,mom
 2026-11-19,WDC,mom
+2026-11-20,WDC,mom
 2026-10-13,WEC,watch|star
 2026-10-14,WEC,watch|star
 2026-10-16,WEC,watch|star
@@ -9560,6 +9502,7 @@ date,yahoo,groups
 2026-11-13,WEC,strong
 2026-11-16,WEC,strong
 2026-11-18,WEC,strong
+2026-11-20,WEC,strong
 2026-09-28,WELL,watch
 2026-09-29,WELL,watch
 2026-10-12,WELL,watch
@@ -9589,6 +9532,7 @@ date,yahoo,groups
 2026-11-17,WELL,strong
 2026-11-18,WELL,strong
 2026-11-19,WELL,star
+2026-11-20,WELL,star
 2026-10-16,WFC,watch
 2026-10-28,WFC,watch
 2026-10-29,WFC,strong
@@ -9672,6 +9616,7 @@ date,yahoo,groups
 2026-11-16,WMT,strong
 2026-11-17,WMT,strong
 2026-11-18,WMT,strong
+2026-11-20,WMT,strong
 2026-10-05,WRB,strong
 2026-10-06,WRB,strong
 2026-10-07,WRB,strong
@@ -9704,7 +9649,7 @@ date,yahoo,groups
 2026-11-17,WRB,strong|purple|star
 2026-11-18,WRB,strong|purple|star
 2026-11-19,WRB,strong|purple|star
-2026-09-25,WSM,strong
+2026-11-20,WRB,strong|star
 2026-09-28,WSM,strong
 2026-09-29,WSM,strong
 2026-10-01,WSM,strong|star
@@ -9735,7 +9680,6 @@ date,yahoo,groups
 2026-11-10,WSM,strong
 2026-11-11,WSM,strong
 2026-11-18,WSM,strong
-2026-09-25,WST,strong
 2026-09-28,WST,strong
 2026-09-29,WST,strong
 2026-09-30,WST,strong
@@ -9805,6 +9749,7 @@ date,yahoo,groups
 2026-11-17,WYNN,star
 2026-11-18,WYNN,watch|star
 2026-11-19,WYNN,star
+2026-11-20,WYNN,star
 2026-10-09,XEL,star
 2026-10-12,XEL,star
 2026-10-13,XEL,watch|star
@@ -9914,6 +9859,7 @@ date,yahoo,groups
 2026-11-16,YUM,strong
 2026-11-17,YUM,strong
 2026-11-18,YUM,strong
+2026-11-20,YUM,strong
 2026-10-15,ZBH,strong
 2026-10-16,ZBH,strong|star
 2026-10-19,ZBH,strong|star
@@ -9936,7 +9882,6 @@ date,yahoo,groups
 2026-11-11,ZBH,strong
 2026-11-12,ZBH,strong
 2026-11-18,ZBH,strong
-2026-09-25,ZBRA,strong|star
 2026-09-28,ZBRA,strong|star
 2026-09-29,ZBRA,strong|star
 2026-09-30,ZBRA,strong|star
