@@ -1,5 +1,4 @@
 date,yahoo,groups
-2026-09-28,__day__,
 2026-09-29,__day__,
 2026-09-30,__day__,
 2026-10-01,__day__,
@@ -39,7 +38,7 @@ date,yahoo,groups
 2026-11-18,__day__,
 2026-11-19,__day__,
 2026-11-20,__day__,
-2026-09-28,NBIS,pass|mom|strong
+2026-11-23,__day__,
 2026-09-29,NBIS,pass|mom|strong|purple|star
 2026-09-30,NBIS,pass|mom|strong|purple|star
 2026-10-01,NBIS,pass|mom|strong|purple|star
@@ -79,7 +78,7 @@ date,yahoo,groups
 2026-11-18,NBIS,mom
 2026-11-19,NBIS,mom
 2026-11-20,NBIS,mom
-2026-09-28,CRWV,mom
+2026-11-23,NBIS,mom
 2026-09-29,CRWV,mom
 2026-09-30,CRWV,pass|mom
 2026-10-01,CRWV,pass|mom|watch
@@ -119,7 +118,7 @@ date,yahoo,groups
 2026-11-18,CRWV,mom
 2026-11-19,CRWV,mom
 2026-11-20,CRWV,mom
-2026-09-28,SMH,pass|mom|strong|purple|star
+2026-11-23,CRWV,mom
 2026-09-29,SMH,pass|mom|strong|purple|star
 2026-09-30,SMH,pass|mom|strong|purple|star
 2026-10-01,SMH,pass|mom|strong|purple|star
@@ -159,7 +158,7 @@ date,yahoo,groups
 2026-11-18,SMH,mom
 2026-11-19,SMH,mom
 2026-11-20,SMH,mom
-2026-09-28,QQQ,pass|mom|strong
+2026-11-23,SMH,mom
 2026-09-29,QQQ,pass|mom|strong
 2026-09-30,QQQ,pass|mom|strong
 2026-10-01,QQQ,pass|mom|strong
@@ -199,7 +198,7 @@ date,yahoo,groups
 2026-11-18,QQQ,mom
 2026-11-19,QQQ,mom
 2026-11-20,QQQ,mom
-2026-09-28,SQQQ,mom
+2026-11-23,QQQ,mom
 2026-09-29,SQQQ,mom
 2026-09-30,SQQQ,mom
 2026-10-01,SQQQ,mom
@@ -239,7 +238,7 @@ date,yahoo,groups
 2026-11-18,SQQQ,pass|mom|watch
 2026-11-19,SQQQ,pass|mom|watch|star
 2026-11-20,SQQQ,pass|mom|strong
-2026-09-28,JEPQ,pass|mom|strong
+2026-11-23,SQQQ,mom
 2026-09-29,JEPQ,pass|mom|strong
 2026-09-30,JEPQ,pass|mom|strong
 2026-10-01,JEPQ,pass|mom
@@ -279,7 +278,7 @@ date,yahoo,groups
 2026-11-18,JEPQ,mom
 2026-11-19,JEPQ,mom
 2026-11-20,JEPQ,mom
-2026-09-28,SVIX,pass|mom|strong
+2026-11-23,JEPQ,mom
 2026-09-29,SVIX,pass|mom|strong
 2026-09-30,SVIX,pass|mom|strong
 2026-10-01,SVIX,pass|mom
@@ -319,7 +318,7 @@ date,yahoo,groups
 2026-11-18,SVIX,mom
 2026-11-19,SVIX,mom
 2026-11-20,SVIX,mom
-2026-09-28,^VIX,pass|mom|watch|star
+2026-11-23,SVIX,mom
 2026-09-29,^VIX,pass|mom|watch
 2026-09-30,^VIX,pass|mom|watch|star
 2026-10-01,^VIX,pass|mom|watch|star
@@ -335,7 +334,7 @@ date,yahoo,groups
 2026-10-15,^VIX,pass|mom|watch|star
 2026-10-16,^VIX,pass|mom|strong|purple|star
 2026-10-19,^VIX,pass|mom|strong|purple|star
-2026-10-20,^VIX,pass|mom|star
+2026-10-20,^VIX,pass|mom|strong|star
 2026-10-21,^VIX,mom|star
 2026-10-22,^VIX,pass|mom|strong|purple|star
 2026-10-23,^VIX,pass|mom|strong
@@ -359,3 +358,4 @@ date,yahoo,groups
 2026-11-18,^VIX,pass|mom|strong
 2026-11-19,^VIX,pass|mom|strong
 2026-11-20,^VIX,pass|mom|strong
+2026-11-23,^VIX,pass|mom|strong
