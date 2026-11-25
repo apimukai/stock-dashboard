@@ -2,3 +2,5 @@ date,yahoo,symbol,groups,verdict,score,spec,box,dir,mom,mom_rank,price
 2026-11-20,SQQQ,SQQQ,strong,ซื้อ,6,95,G,UP,-0.4434,493.0,57.59
 2026-11-20,^VIX,^VIX,strong,ซื้อ,5,85,G,UP,-0.1957,461.0,35.89
 2026-11-23,^VIX,^VIX,strong,ถือ,3,68,B,PB,-0.0521,404.0,26.62
+2026-11-24,SQQQ,SQQQ,watch|star,ถือ,4,73,RG,PB,-0.4851,494.0,48.66
+2026-11-24,^VIX,^VIX,strong,ถือ,2,58,G,PB,-0.0092,370.0,26.36
