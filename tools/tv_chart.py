@@ -2,6 +2,7 @@
 1) lw_chart(): TradingView Lightweight Charts (โอเพนซอร์ส) + ข้อมูล Yahoo ของเรา + ปักสัญญาณลงบนกราฟ
 2) tv_widget(): ฝัง TradingView Advanced Chart ตัวจริง (เครื่องมือวาดเส้น/อินดิเคเตอร์ครบ · ข้อมูลของ TradingView)
 """
+import datetime as dt
 import json
 
 import numpy as np
@@ -163,38 +164,53 @@ def x7_panel(df: pd.DataFrame, key: str, default_date=None) -> tuple:
     lo, hi = idx[min(14, len(idx) - 1)].date(), idx[-1].date()
     dflt = pd.Timestamp(default_date).date() if default_date is not None else idx[max(0, len(idx) - 21)].date()
     dflt = min(max(dflt, lo), hi)
-    mode = st.radio("วิธีระบุจุดซื้อ", ["🔎 ใส่ราคาซื้อ แล้วหาวันที่ให้", "📅 เลือกวันที่เอง"], horizontal=True,
-                    key=f"{key}_x7mode", label_visibility="collapsed")
-    c1, c2, c3 = st.columns([1.2, 1.6, 2.4])
-    note = ""
-    if mode.startswith("🔎"):
-        p = c1.number_input("ราคาซื้อ", min_value=0.0, value=0.0, step=0.01, format="%.2f", key=f"{key}_x7pp",
-                            help="ใส่ราคาที่ซื้อจริง ระบบจะหาวันที่ราคาหุ้นเคยซื้อขายผ่านราคานี้ (ต่ำสุดของวัน ≤ ราคา ≤ สูงสุดของวัน)")
-        if p > 0:
-            L = df["Low"].to_numpy(float)
-            H = df["High"].to_numpy(float)
-            ok = (L <= p) & (H >= p)
-            ok[:14] = False  # ต้องมีข้อมูลก่อนวันซื้อพอคำนวณ ATR
-            hits = list(np.where(ok)[0][::-1])
+    k_d, k_p, k_pick = f"{key}_x7d", f"{key}_x7p", f"{key}_x7pick"
+    L, H = df["Low"].to_numpy(float), df["High"].to_numpy(float)
+
+    def matches(price):
+        """วันที่ราคาซื้อขายผ่านราคานี้ (ต่ำสุด ≤ ราคา ≤ สูงสุด) ล่าสุดก่อน · ข้าม 14 วันแรก (ต้องใช้คำนวณ ATR)"""
+        ok = (L <= price) & (H >= price)
+        ok[:14] = False
+        return [idx[i].date() for i in np.where(ok)[0][::-1]]
+
+    def on_price():  # ใส่ราคาแล้ว -> ตั้งวันที่ซื้อเป็นวันล่าสุดที่ราคาผ่านราคานี้ (เปลี่ยนวันที่เองได้)
+        pr = ss.get(k_p) or 0
+        if pr > 0:
+            hits = matches(pr)
             if hits:
-                opts = [idx[i].date() for i in hits]
-                rng = {idx[i].date(): (L[i], H[i]) for i in hits}
-                d = c2.selectbox(f"วันที่ราคาผ่าน {p:,.2f} ({len(opts)} วัน · ล่าสุดก่อน)", opts, key=f"{key}_x7pick_{p:.4f}",
-                                 format_func=lambda x: f"{x:%d/%m/%Y} · ช่วงราคาวันนั้น {rng[x][0]:,.2f}–{rng[x][1]:,.2f}")
+                ss[k_d] = hits[0]
+                ss[k_pick] = hits[0]
             else:
                 C = df["Close"].to_numpy(float)
-                j = int(np.nanargmin(np.abs(np.where(np.arange(len(C)) >= 14, C, np.nan) - p)))
-                d = idx[j].date()
-                c2.info(f"ไม่มีวันไหนในช่วงกราฟที่ราคาผ่าน {p:,.2f} · ใช้วันที่ราคาปิดใกล้สุด {d:%d/%m/%Y} ({C[j]:,.2f})")
-            note = f"ราคาซื้อ {p:,.2f} · ค้นหาในช่วงข้อมูลกราฟ ({idx[0]:%d/%m/%Y}–{idx[-1]:%d/%m/%Y}) ถ้าซื้อก่อนหน้านั้นให้เลือกช่วงเวลาที่แถบซ้ายให้ยาวขึ้น"
+                j = int(np.nanargmin(np.abs(np.where(np.arange(len(C)) >= 14, C, np.nan) - pr)))
+                ss[k_d] = idx[j].date()
+
+    def on_pick():
+        ss[k_d] = ss[k_pick]
+
+    if not isinstance(ss.get(k_d), dt.date) or not (lo <= ss[k_d] <= hi):
+        ss[k_d] = dflt
+    c1, c2, c3 = st.columns([1.1, 1.1, 2.8])
+    p = c1.number_input("ราคาซื้อ", min_value=0.0, value=0.0, step=0.01, format="%.2f", key=k_p, on_change=on_price,
+                        help="ใส่ราคาที่ซื้อจริง ระบบจะหาวันที่ราคาหุ้นเคยซื้อขายผ่านราคานี้ แล้วตั้งวันที่ซื้อให้ (วันล่าสุด) · "
+                             "เว้น 0 = ใช้ราคาเปิดของวันที่ซื้อ")
+    d = c2.date_input("วันที่ซื้อ", min_value=lo, max_value=hi, key=k_d, format="DD/MM/YYYY")
+    note = ""
+    if p > 0:
+        hits = matches(p)
+        if hits:
+            if ss.get(k_pick) not in hits:
+                ss[k_pick] = hits[0]
+            rng = {idx[i].date(): (L[i], H[i]) for i in range(len(idx))}
+            st.selectbox(f"🔎 วันที่ราคาผ่าน {p:,.2f} · พบ {len(hits)} วัน (ล่าสุดก่อน) · เลือกเพื่อเปลี่ยนวันที่ซื้อ", hits,
+                         key=k_pick, on_change=on_pick,
+                         format_func=lambda x: f"{x:%d/%m/%Y} · ช่วงราคาวันนั้น {rng[x][0]:,.2f}–{rng[x][1]:,.2f}")
+            if d not in hits:
+                note = f"⚠️ วันที่ {d:%d/%m/%Y} ราคาไม่ได้ผ่าน {p:,.2f} · "
         else:
-            d = dflt
-            c2.caption(f"ยังไม่ได้ใส่ราคา · แสดงจากวันที่ {d:%d/%m/%Y} ที่ราคาเปิด"
-                       + (" (สัญญาณซื้อล่าสุด)" if default_date is not None else ""))
-    else:
-        d = c1.date_input("วันที่ซื้อ", value=dflt, min_value=lo, max_value=hi, key=f"{key}_x7d", format="DD/MM/YYYY")
-        p = c2.number_input("ราคาซื้อ (เว้น 0 = ราคาเปิดวันนั้น)", min_value=0.0, value=0.0, step=0.01, format="%.2f",
-                            key=f"{key}_x7p")
+            note = f"ไม่มีวันไหนในช่วงกราฟที่ราคาผ่าน {p:,.2f} จึงตั้งวันที่เป็นวันที่ราคาปิดใกล้สุด · "
+        note += (f"ค้นหาในช่วงข้อมูลกราฟ ({idx[0]:%d/%m/%Y}–{idx[-1]:%d/%m/%Y}) "
+                 "ถ้าซื้อก่อนหน้านั้นให้เลือกช่วงเวลาที่แถบซ้ายให้ยาวขึ้น")
     e = int(np.searchsorted(idx, pd.Timestamp(d)))
     open_px = float(df["Open"].iloc[min(e, len(df) - 1)])
     res = x7_exit(df, d, p or None)
