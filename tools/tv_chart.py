@@ -146,9 +146,10 @@ def x7_overlays(res: dict, intraday: bool = False) -> tuple:
 
 
 def x7_panel(df: pd.DataFrame, key: str, default_date=None) -> tuple:
-    """ช่องกรอกวันที่/ราคาซื้อ + สถานะการขายตามกฎ X7 · คืน (เส้น, จุด) ไปวาดบนกราฟ"""
+    """ช่องกรอกราคา/วันที่ซื้อ + สถานะการขายตามกฎ X7 · คืน (เส้น, จุด) ไปวาดบนกราฟ
+    โหมดหลัก: ใส่ราคาซื้อ แล้วหาวันที่ที่ราคาเคยซื้อขายผ่านราคานั้น (ต่ำสุด ≤ ราคา ≤ สูงสุด) ให้เลือก"""
     ss = st.session_state
-    on = st.toggle("🛡️ แสดงจุดขาย X7 (Stop −8% + Trailing 3×ATR) จากวันที่ซื้อ", key=f"{key}_x7on",
+    on = st.toggle("🛡️ แสดงจุดขาย X7 (Stop −8% + Trailing 3×ATR) จากวันที่ซื้อ", value=True, key=f"{key}_x7on",
                    help="วิธีขายที่ backtest หุ้น SET100 ปี 2015–2026 แล้วคุมขาดทุนได้ดีที่สุด "
                         "(ไม้ขาดทุนเกิน 10% เหลือไม่ถึง 1% · ขาดทุนแย่สุดราว −13%)")
     if not on:
@@ -156,15 +157,46 @@ def x7_panel(df: pd.DataFrame, key: str, default_date=None) -> tuple:
     idx = pd.DatetimeIndex(df.index)
     if idx.tz is not None:
         idx = idx.tz_convert("Asia/Bangkok").tz_localize(None)
+    if len(idx) < 16:
+        st.caption("ข้อมูลกราฟสั้นเกินไปสำหรับ X7 · เลือกช่วงเวลาที่แถบซ้ายให้ยาวขึ้น")
+        return [], []
     lo, hi = idx[min(14, len(idx) - 1)].date(), idx[-1].date()
     dflt = pd.Timestamp(default_date).date() if default_date is not None else idx[max(0, len(idx) - 21)].date()
     dflt = min(max(dflt, lo), hi)
-    c1, c2, c3 = st.columns([1.2, 1.2, 2.6])
-    d = c1.date_input("วันที่ซื้อ", value=dflt, min_value=lo, max_value=hi, key=f"{key}_x7d", format="DD/MM/YYYY")
+    mode = st.radio("วิธีระบุจุดซื้อ", ["🔎 ใส่ราคาซื้อ แล้วหาวันที่ให้", "📅 เลือกวันที่เอง"], horizontal=True,
+                    key=f"{key}_x7mode", label_visibility="collapsed")
+    c1, c2, c3 = st.columns([1.2, 1.6, 2.4])
+    note = ""
+    if mode.startswith("🔎"):
+        p = c1.number_input("ราคาซื้อ", min_value=0.0, value=0.0, step=0.01, format="%.2f", key=f"{key}_x7pp",
+                            help="ใส่ราคาที่ซื้อจริง ระบบจะหาวันที่ราคาหุ้นเคยซื้อขายผ่านราคานี้ (ต่ำสุดของวัน ≤ ราคา ≤ สูงสุดของวัน)")
+        if p > 0:
+            L = df["Low"].to_numpy(float)
+            H = df["High"].to_numpy(float)
+            ok = (L <= p) & (H >= p)
+            ok[:14] = False  # ต้องมีข้อมูลก่อนวันซื้อพอคำนวณ ATR
+            hits = list(np.where(ok)[0][::-1])
+            if hits:
+                opts = [idx[i].date() for i in hits]
+                rng = {idx[i].date(): (L[i], H[i]) for i in hits}
+                d = c2.selectbox(f"วันที่ราคาผ่าน {p:,.2f} ({len(opts)} วัน · ล่าสุดก่อน)", opts, key=f"{key}_x7pick_{p:.4f}",
+                                 format_func=lambda x: f"{x:%d/%m/%Y} · ช่วงราคาวันนั้น {rng[x][0]:,.2f}–{rng[x][1]:,.2f}")
+            else:
+                C = df["Close"].to_numpy(float)
+                j = int(np.nanargmin(np.abs(np.where(np.arange(len(C)) >= 14, C, np.nan) - p)))
+                d = idx[j].date()
+                c2.info(f"ไม่มีวันไหนในช่วงกราฟที่ราคาผ่าน {p:,.2f} · ใช้วันที่ราคาปิดใกล้สุด {d:%d/%m/%Y} ({C[j]:,.2f})")
+            note = f"ราคาซื้อ {p:,.2f} · ค้นหาในช่วงข้อมูลกราฟ ({idx[0]:%d/%m/%Y}–{idx[-1]:%d/%m/%Y}) ถ้าซื้อก่อนหน้านั้นให้เลือกช่วงเวลาที่แถบซ้ายให้ยาวขึ้น"
+        else:
+            d = dflt
+            c2.caption(f"ยังไม่ได้ใส่ราคา · แสดงจากวันที่ {d:%d/%m/%Y} ที่ราคาเปิด"
+                       + (" (สัญญาณซื้อล่าสุด)" if default_date is not None else ""))
+    else:
+        d = c1.date_input("วันที่ซื้อ", value=dflt, min_value=lo, max_value=hi, key=f"{key}_x7d", format="DD/MM/YYYY")
+        p = c2.number_input("ราคาซื้อ (เว้น 0 = ราคาเปิดวันนั้น)", min_value=0.0, value=0.0, step=0.01, format="%.2f",
+                            key=f"{key}_x7p")
     e = int(np.searchsorted(idx, pd.Timestamp(d)))
     open_px = float(df["Open"].iloc[min(e, len(df) - 1)])
-    p = c2.number_input("ราคาซื้อ (เว้น 0 = ราคาเปิดวันนั้น)", min_value=0.0, value=0.0, step=0.01, format="%.2f",
-                        key=f"{key}_x7p")
     res = x7_exit(df, d, p or None)
     if not res["ok"]:
         c3.warning(res["msg"])
@@ -181,6 +213,8 @@ def x7_panel(df: pd.DataFrame, key: str, default_date=None) -> tuple:
         pnl = res["last"] / res["entry"] - 1
         gap = min(res["last"] / res["stop"] - 1, res["last"] / res["trail_now"] - 1 if res["trail_now"] > 0 else 9)
         c3.success(f"🟢 **ถือต่อ** · ตอนนี้ {pnl:+.1%} · ราคาห่างเส้นขายที่ใกล้สุด {gap:.1%}")
+    if note:
+        st.caption(note)
     m = st.columns(4)
     m[0].metric("ราคาซื้อ", f"{res['entry']:,.2f}", f"{res['entry_date']:%d/%m/%Y}", delta_color="off")
     m[1].metric("เส้น Stop −8%", f"{res['stop']:,.2f}", "ขายทันทีถ้าราคาแตะ", delta_color="off")
@@ -188,7 +222,8 @@ def x7_panel(df: pd.DataFrame, key: str, default_date=None) -> tuple:
                 "ปิดต่ำกว่า = ขายเปิดวันถัดไป", delta_color="off")
     eff = max(res["stop"], res["trail_now"]) if pd.notna(res["trail_now"]) else res["stop"]
     m[3].metric("เส้นขายที่ใช้จริงตอนนี้", f"{eff:,.2f}", "ค่าที่สูงกว่าของสองเส้น", delta_color="off")
-    st.caption(f"ราคาซื้อเริ่มต้น = ราคาเปิดวันที่เลือก ({open_px:,.2f}) · ATR(14) ล่าสุด {res['atr']:,.2f} · "
+    st.caption((f"ราคาซื้อเริ่มต้น = ราคาเปิดวันที่เลือก ({open_px:,.2f}) · " if not p else "")
+               + f"ATR(14) ล่าสุด {res['atr']:,.2f} · "
                "เส้น trailing ขยับขึ้นตามราคาปิดสูงสุดหลังซื้อ (อาจลดลงเล็กน้อยเมื่อความผันผวนเพิ่ม ตามกฎที่ใช้ทดสอบ) · "
                "ไม่ใช่คำแนะนำซื้อขาย")
     return x7_overlays(res)
