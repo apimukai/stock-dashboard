@@ -335,8 +335,7 @@ def quote_board():
                                     "เปลี่ยนแปลง": st.column_config.NumberColumn(format="%+,.2f")})
 
 
-quote_board()
-st.divider()
+# แถวราคา Watchlist แสดงเฉพาะหน้าแรก (แท็บการ์ดราคาหุ้น) · แท็บอื่นไม่ต้องเลื่อนผ่าน และไม่ต้องดึงราคาทุก 60 วินาที
 
 set100 = load_set100()
 us = load_us()
@@ -451,6 +450,9 @@ def cards_tab():
 
 
 with tab4:
+    if getattr(tab4, "open", True):
+        quote_board()
+        st.divider()
     cards_tab()
 
 
