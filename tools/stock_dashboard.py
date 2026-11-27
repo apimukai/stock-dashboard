@@ -103,6 +103,38 @@ def local_history(sym: str) -> pd.DataFrame:
 
 
 PERIOD_DAYS = {"3mo": 92, "6mo": 183, "1y": 366, "2y": 731, "5y": 1827}
+NO_DAILY_HISTORY = {"^SET.BK"}  # Yahoo ไม่มีแท่งรายวันย้อนหลัง (มีแค่วันล่าสุด) และแท่งรายเดือนขาดช่วง
+
+
+@st.cache_data(ttl=1800, show_spinner=False)
+def hourly_daily(sym: str) -> pd.DataFrame:
+    """แท่งรายวัน (เปิด/สูง/ต่ำ/ปิด) สร้างจากแท่งรายชั่วโมงของ Yahoo (ย้อนหลังได้ ~2 ปี) สำหรับดัชนีที่ Yahoo ไม่มีแท่งรายวันย้อนหลัง
+    เช่น ^SET.BK · ราคาปิดแทนด้วยราคาปิดทางการจากไฟล์ในโปรเจกต์ (แท่งชั่วโมงไม่รวมช่วงจับคู่ปิดตลาด คลาด ~0.1%)"""
+    try:
+        h = yf.Ticker(sym).history(period="730d", interval="1h", auto_adjust=False)
+    except Exception:
+        return pd.DataFrame()
+    if h.empty:
+        return pd.DataFrame()
+    h.index = h.index.tz_convert("Asia/Bangkok").tz_localize(None) if h.index.tz is not None else h.index
+    d = h.resample("D").agg({"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"})
+    d = d.dropna(subset=["Close"])
+    off = local_history(sym)
+    if not off.empty:
+        c = off["Close"].reindex(d.index)
+        d["Close"] = c.fillna(d["Close"])
+    try:  # แท่งวันล่าสุดแบบทางการ (Yahoo มีให้เฉพาะวันล่าสุด)
+        t = yf.Ticker(sym).history(period="5d", interval="1d", auto_adjust=False).dropna(subset=["Close"])
+        if len(t):
+            t.index = t.index.tz_convert("Asia/Bangkok").tz_localize(None).normalize() if t.index.tz is not None else t.index
+            for day, r in t.iterrows():
+                d.loc[day, ["Open", "High", "Low", "Close"]] = [r["Open"], r["High"], r["Low"], r["Close"]]
+    except Exception:
+        pass
+    d = d.sort_index()
+    d["High"] = d[["High", "Open", "Close"]].max(axis=1)
+    d["Low"] = d[["Low", "Open", "Close"]].min(axis=1)
+    return d
 
 
 @st.cache_data(ttl=60, show_spinner=False)
@@ -110,7 +142,27 @@ def get_history(sym: str, period: str, interval: str) -> pd.DataFrame:
     df = yf.Ticker(sym).history(period=period, interval=interval, auto_adjust=False)
     if not df.empty:
         df = df[["Open", "High", "Low", "Close", "Volume"]].dropna(subset=["Close"])
-    # Yahoo ให้ประวัติ ^SET.BK แค่วันล่าสุด -> ใช้ไฟล์ในโปรเจกต์แทนสำหรับกราฟรายวันขึ้นไป
+    # Yahoo ให้แท่งรายวันของ ^SET.BK แค่วันล่าสุด -> สร้างแท่งเทียนจากแท่งรายชั่วโมง (ย้อนหลัง ~2 ปี)
+    # แท่งรายเดือนของ Yahoo ก็ขาดช่วง -> เดือนที่มีแท่งรายวันใช้แท่งที่สร้างเอง เดือนก่อนหน้านั้นใช้ของ Yahoo
+    if interval in ("1d", "1wk") and len(df) < 5 or interval == "1mo" and sym in NO_DAILY_HISTORY:
+        d = hourly_daily(sym)
+        if len(d) >= 5:
+            agg = {"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"}
+            if interval == "1wk":
+                d = d.resample("W-FRI").agg(agg).dropna(subset=["Close"])
+            elif interval == "1mo":
+                d = d.resample("MS").agg(agg).dropna(subset=["Close"])
+                d = d[d.index > d.index[0]]  # เดือนแรกอาจไม่ครบเดือน
+                if len(df):
+                    old = df.copy()
+                    old.index = old.index.tz_convert("Asia/Bangkok").tz_localize(None) if old.index.tz is not None else old.index
+                    d = pd.concat([old[old.index < d.index[0]], d])
+            if period == "ytd":
+                d = d[d.index >= pd.Timestamp(dt.date.today().year, 1, 1)]
+            elif period in PERIOD_DAYS:
+                d = d[d.index >= pd.Timestamp.today() - pd.Timedelta(days=PERIOD_DAYS[period])]
+            return d
+    # สำรอง: ราคาปิดอย่างเดียวจากไฟล์ในโปรเจกต์ (กราฟเป็นเส้น)
     if len(df) < 5 and interval in ("1d", "1wk", "1mo"):
         loc = local_history(sym)
         if not loc.empty:
