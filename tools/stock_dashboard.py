@@ -49,7 +49,7 @@ PERIODS = {
     "YTD": ("ytd", "1d"),
     "1 ปี": ("1y", "1d"),
     "2 ปี": ("2y", "1d"),
-    "5 ปี": ("5y", "1wk"),
+    "5 ปี": ("5y", "1d"),  # รายวัน เพื่อให้ใช้จุดขาย X7 ได้ (กราฟเปิดที่ ~1 ปีล่าสุด เลื่อนดูย้อนหลังได้)
     "สูงสุด": ("max", "1mo"),
 }
 
@@ -286,7 +286,7 @@ if names:
     with st.sidebar.expander("สัญลักษณ์ใน assets_meta.csv"):
         st.dataframe(pd.DataFrame(names.items(), columns=["symbol", "ชื่อ"]), hide_index=True, height=250)
 
-period_label = st.sidebar.selectbox("ช่วงเวลา", list(PERIODS), index=6)
+period_label = st.sidebar.selectbox("ช่วงเวลา", list(PERIODS), index=list(PERIODS).index("5 ปี"))
 period, interval = PERIODS[period_label]
 show_ma = st.sidebar.multiselect("เส้นค่าเฉลี่ย (MA)", [10, 20, 50, 100, 200], default=[10, 50, 100, 200])
 refresh = st.sidebar.select_slider("รีเฟรชอัตโนมัติ (วินาที)", options=[0, 30, 60, 120, 300], value=60,
@@ -633,7 +633,8 @@ with tab1:
                     last_buy = b["date"].max() if len(b) else None
                 xl, xm = x7_panel(df, f"chart_{sym}", last_buy)
             lw_chart(df, ma=show_ma if daily else (), ma_kind=ma_kind, events=events, keys=keys, height=580,
-                     intraday=not daily, line=chart_type == "เส้น", extra_lines=xl, extra_marks=xm)
+                     intraday=not daily, line=chart_type == "เส้น", extra_lines=xl, extra_marks=xm,
+                     visible_bars=260 if daily and len(df) > 300 else 0)
             st.caption("ซูมด้วยล้อเมาส์ · ลากเพื่อเลื่อน · ดับเบิลคลิกแกนราคาเพื่อรีเซ็ต · ตัวอักษรบนกราฟ = วันแรกที่เกิดสัญญาณ "
                        "(💪 เข้ากลุ่มแข็งแกร่ง · ซื้อ/ขาย = ผลอ่านเปลี่ยน · A/C = สูตรที่ทดสอบย้อนหลังแล้วชนะตลาดใน 20 วัน) · "
                        "ไม่ใช่คำแนะนำซื้อขาย")
