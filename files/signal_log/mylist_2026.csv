@@ -7,3 +7,5 @@ date,yahoo,symbol,groups,verdict,score,spec,box,dir,mom,mom_rank,price
 2026-11-25,^VIX,^VIX,strong|purple|star,ซื้อ,4,85,G,V,0.0192,336.0,28.29
 2026-11-25,SQQQ,SQQQ,watch|star,ถือ,3,60,RG,V,-0.4636,493.0,49.6
 2026-11-26,^VIX,^VIX,strong|purple|star,ถือ,3,75,G,V,0.0343,325.0,26.8
+2026-11-27,^VIX,^VIX,star,ถือ,2,40,Y,V,-0.0023,342.0,23.81
+2026-11-27,SQQQ,SQQQ,star,รอ,0,-15,X,V,-0.4634,492.0,45.76

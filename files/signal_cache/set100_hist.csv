@@ -1,5 +1,4 @@
 date,yahoo,groups
-2026-09-01,__day__,
 2026-09-02,__day__,
 2026-09-03,__day__,
 2026-09-04,__day__,
@@ -59,6 +58,7 @@ date,yahoo,groups
 2026-11-24,__day__,
 2026-11-25,__day__,
 2026-11-26,__day__,
+2026-11-27,__day__,
 2026-09-07,ADVANC.BK,watch
 2026-09-09,ADVANC.BK,watch
 2026-09-10,ADVANC.BK,watch
@@ -67,7 +67,6 @@ date,yahoo,groups
 2026-09-22,ADVANC.BK,watch
 2026-11-11,ADVANC.BK,watch|star
 2026-11-16,ADVANC.BK,watch
-2026-09-01,AMATA.BK,pass|mom
 2026-09-02,AMATA.BK,pass|mom
 2026-09-03,AMATA.BK,pass|mom|strong
 2026-09-04,AMATA.BK,pass|mom|strong
@@ -127,7 +126,7 @@ date,yahoo,groups
 2026-11-24,AMATA.BK,pass|mom|watch
 2026-11-25,AMATA.BK,mom
 2026-11-26,AMATA.BK,mom
-2026-09-01,AOT.BK,mom
+2026-11-27,AMATA.BK,mom
 2026-09-02,AOT.BK,mom
 2026-09-03,AOT.BK,mom
 2026-09-04,AOT.BK,pass|mom
@@ -269,7 +268,6 @@ date,yahoo,groups
 2026-09-23,BAM.BK,strong
 2026-09-25,BAM.BK,watch
 2026-11-11,BAM.BK,watch|star
-2026-09-01,BBL.BK,strong
 2026-09-02,BBL.BK,strong
 2026-09-03,BBL.BK,strong
 2026-09-04,BBL.BK,strong
@@ -292,7 +290,6 @@ date,yahoo,groups
 2026-11-13,BBL.BK,watch
 2026-11-16,BBL.BK,watch
 2026-11-17,BBL.BK,watch
-2026-09-01,BCH.BK,strong
 2026-09-03,BCH.BK,strong
 2026-09-14,BCH.BK,strong
 2026-09-15,BCH.BK,strong
@@ -325,7 +322,6 @@ date,yahoo,groups
 2026-11-23,BCH.BK,strong
 2026-11-24,BCH.BK,strong
 2026-11-25,BCH.BK,strong
-2026-09-01,BCP.BK,strong
 2026-09-02,BCP.BK,strong
 2026-09-03,BCP.BK,strong
 2026-09-04,BCP.BK,strong
@@ -379,6 +375,7 @@ date,yahoo,groups
 2026-11-24,BCP.BK,mom
 2026-11-25,BCP.BK,mom
 2026-11-26,BCP.BK,mom
+2026-11-27,BCP.BK,mom
 2026-09-04,BCPG.BK,strong
 2026-09-07,BCPG.BK,strong|purple|star
 2026-09-08,BCPG.BK,strong
@@ -387,7 +384,6 @@ date,yahoo,groups
 2026-11-04,BCPG.BK,watch|star
 2026-11-05,BCPG.BK,watch|star
 2026-11-09,BCPG.BK,watch
-2026-09-01,BDMS.BK,strong
 2026-09-02,BDMS.BK,strong
 2026-09-03,BDMS.BK,strong
 2026-09-04,BDMS.BK,strong
@@ -419,6 +415,7 @@ date,yahoo,groups
 2026-11-23,BDMS.BK,strong
 2026-11-24,BDMS.BK,strong
 2026-11-25,BDMS.BK,strong
+2026-11-27,BDMS.BK,strong
 2026-09-17,BEM.BK,strong
 2026-09-18,BEM.BK,strong
 2026-09-21,BEM.BK,strong|star
@@ -436,7 +433,7 @@ date,yahoo,groups
 2026-11-23,BEM.BK,strong
 2026-11-24,BEM.BK,strong
 2026-11-26,BEM.BK,strong
-2026-09-01,BGRIM.BK,pass|mom|star
+2026-11-27,BEM.BK,strong
 2026-09-02,BGRIM.BK,pass|mom|strong|star
 2026-09-03,BGRIM.BK,pass|mom
 2026-09-04,BGRIM.BK,pass|mom|strong
@@ -548,6 +545,7 @@ date,yahoo,groups
 2026-11-24,BJC.BK,strong
 2026-11-25,BJC.BK,strong
 2026-11-26,BJC.BK,strong
+2026-11-27,BJC.BK,strong
 2026-09-10,BLA.BK,watch
 2026-09-11,BLA.BK,watch
 2026-09-14,BLA.BK,strong
@@ -616,7 +614,7 @@ date,yahoo,groups
 2026-11-23,CBG.BK,strong
 2026-11-24,CBG.BK,strong
 2026-11-25,CBG.BK,strong
-2026-09-01,CCET.BK,strong|star
+2026-11-27,CBG.BK,strong
 2026-09-02,CCET.BK,strong
 2026-09-03,CCET.BK,strong
 2026-09-04,CCET.BK,strong
@@ -715,6 +713,7 @@ date,yahoo,groups
 2026-11-24,CHG.BK,strong
 2026-11-25,CHG.BK,strong
 2026-11-26,CHG.BK,strong
+2026-11-27,CHG.BK,strong
 2026-09-21,CK.BK,watch
 2026-09-22,CK.BK,watch
 2026-09-23,CK.BK,watch
@@ -785,6 +784,7 @@ date,yahoo,groups
 2026-11-24,CPALL.BK,strong
 2026-11-25,CPALL.BK,strong
 2026-11-26,CPALL.BK,strong
+2026-11-27,CPALL.BK,strong
 2026-09-03,CPF.BK,strong
 2026-09-04,CPF.BK,strong
 2026-09-08,CPF.BK,strong
@@ -811,7 +811,6 @@ date,yahoo,groups
 2026-11-13,CPN.BK,strong
 2026-11-16,CPN.BK,strong
 2026-11-17,CPN.BK,strong
-2026-09-01,CRC.BK,strong
 2026-09-02,CRC.BK,strong
 2026-09-08,CRC.BK,strong
 2026-09-09,CRC.BK,strong
@@ -861,7 +860,7 @@ date,yahoo,groups
 2026-11-24,CRC.BK,pass|mom|strong|star
 2026-11-25,CRC.BK,pass|mom|star
 2026-11-26,CRC.BK,pass|mom
-2026-09-01,DELTA.BK,mom
+2026-11-27,CRC.BK,pass|mom
 2026-09-02,DELTA.BK,mom
 2026-09-03,DELTA.BK,mom
 2026-09-04,DELTA.BK,pass|mom
@@ -895,7 +894,7 @@ date,yahoo,groups
 2026-11-05,DOHOME.BK,watch|star
 2026-09-11,EA.BK,watch|star
 2026-09-14,EA.BK,watch|star
-2026-09-01,EGCO.BK,strong
+2026-11-27,EA.BK,star
 2026-09-03,EGCO.BK,strong
 2026-09-08,EGCO.BK,strong
 2026-09-09,EGCO.BK,strong
@@ -1044,7 +1043,6 @@ date,yahoo,groups
 2026-11-12,GULF.BK,strong
 2026-11-13,GULF.BK,strong
 2026-11-16,GULF.BK,strong
-2026-09-01,GUNKUL.BK,pass|mom
 2026-09-02,GUNKUL.BK,pass|mom
 2026-09-03,GUNKUL.BK,pass|mom
 2026-09-04,GUNKUL.BK,pass|mom
@@ -1104,7 +1102,7 @@ date,yahoo,groups
 2026-11-24,GUNKUL.BK,mom
 2026-11-25,GUNKUL.BK,mom
 2026-11-26,GUNKUL.BK,mom
-2026-09-01,HANA.BK,pass|mom|star
+2026-11-27,GUNKUL.BK,mom
 2026-09-02,HANA.BK,pass|mom
 2026-09-03,HANA.BK,pass|mom
 2026-09-04,HANA.BK,pass|mom|strong
@@ -1164,6 +1162,7 @@ date,yahoo,groups
 2026-11-24,HANA.BK,pass|mom|strong
 2026-11-25,HANA.BK,mom
 2026-11-26,HANA.BK,mom
+2026-11-27,HANA.BK,pass|mom|watch
 2026-09-29,HMPRO.BK,watch
 2026-10-02,HMPRO.BK,strong|purple|star
 2026-10-05,HMPRO.BK,strong|purple|star
@@ -1199,7 +1198,7 @@ date,yahoo,groups
 2026-11-23,ICHI.BK,strong
 2026-11-24,ICHI.BK,strong
 2026-11-25,ICHI.BK,strong
-2026-09-01,IRPC.BK,pass|mom|strong|purple|star
+2026-11-27,ICHI.BK,strong
 2026-09-02,IRPC.BK,pass|mom|strong
 2026-09-03,IRPC.BK,pass|mom|strong
 2026-09-04,IRPC.BK,pass|mom|strong
@@ -1259,7 +1258,7 @@ date,yahoo,groups
 2026-11-24,IRPC.BK,mom
 2026-11-25,IRPC.BK,mom
 2026-11-26,IRPC.BK,mom
-2026-09-01,IVL.BK,strong|star
+2026-11-27,IRPC.BK,mom
 2026-09-02,IVL.BK,strong|star
 2026-09-03,IVL.BK,strong|star
 2026-09-04,IVL.BK,strong|star
@@ -1350,7 +1349,6 @@ date,yahoo,groups
 2026-11-19,KBANK.BK,strong
 2026-11-23,KBANK.BK,strong
 2026-11-24,KBANK.BK,strong
-2026-09-01,KCE.BK,pass|mom|strong|purple|star
 2026-09-02,KCE.BK,pass|mom|strong
 2026-09-03,KCE.BK,pass|mom|strong
 2026-09-04,KCE.BK,pass|mom|strong
@@ -1410,7 +1408,7 @@ date,yahoo,groups
 2026-11-24,KCE.BK,mom
 2026-11-25,KCE.BK,mom
 2026-11-26,KCE.BK,mom
-2026-09-01,KKP.BK,pass|mom|strong|star
+2026-11-27,KCE.BK,pass|mom|watch
 2026-09-02,KKP.BK,pass|mom|strong|star
 2026-09-03,KKP.BK,pass|mom|strong|star
 2026-09-04,KKP.BK,pass|mom|strong|star
@@ -1470,7 +1468,7 @@ date,yahoo,groups
 2026-11-24,KKP.BK,mom
 2026-11-25,KKP.BK,mom
 2026-11-26,KKP.BK,mom
-2026-09-01,KTB.BK,pass|mom
+2026-11-27,KKP.BK,mom
 2026-09-02,KTB.BK,pass|mom|strong
 2026-09-03,KTB.BK,pass|mom|strong
 2026-09-04,KTB.BK,pass|mom
@@ -1530,6 +1528,7 @@ date,yahoo,groups
 2026-11-24,KTB.BK,mom
 2026-11-25,KTB.BK,mom
 2026-11-26,KTB.BK,mom
+2026-11-27,KTB.BK,pass|mom|watch
 2026-09-04,KTC.BK,strong
 2026-09-07,KTC.BK,strong
 2026-09-08,KTC.BK,strong
@@ -1585,6 +1584,7 @@ date,yahoo,groups
 2026-11-17,MEGA.BK,strong
 2026-11-18,MEGA.BK,strong
 2026-11-19,MEGA.BK,strong
+2026-11-27,MEGA.BK,strong
 2026-11-05,MINT.BK,watch|star
 2026-11-09,MINT.BK,watch
 2026-11-10,MINT.BK,watch|star
@@ -1616,7 +1616,6 @@ date,yahoo,groups
 2026-11-10,MTC.BK,watch
 2026-11-12,MTC.BK,watch
 2026-11-13,MTC.BK,watch
-2026-09-01,OR.BK,watch
 2026-09-03,OR.BK,watch
 2026-09-04,OR.BK,strong
 2026-09-21,OR.BK,watch|star
@@ -1701,7 +1700,7 @@ date,yahoo,groups
 2026-11-24,PLANB.BK,pass|mom
 2026-11-25,PLANB.BK,pass|mom
 2026-11-26,PLANB.BK,mom
-2026-09-01,PR9.BK,strong
+2026-11-27,PLANB.BK,mom
 2026-09-03,PR9.BK,strong
 2026-09-04,PR9.BK,strong
 2026-09-07,PR9.BK,strong
@@ -1726,7 +1725,6 @@ date,yahoo,groups
 2026-11-17,PR9.BK,strong|purple|star
 2026-11-18,PR9.BK,strong
 2026-11-19,PR9.BK,strong
-2026-09-01,PRM.BK,pass|mom
 2026-09-02,PRM.BK,pass|mom|strong
 2026-09-03,PRM.BK,pass|mom|strong
 2026-09-04,PRM.BK,pass|mom|strong
@@ -1774,7 +1772,6 @@ date,yahoo,groups
 2026-10-05,PTG.BK,strong
 2026-10-06,PTG.BK,strong
 2026-10-07,PTG.BK,strong
-2026-09-01,PTT.BK,strong
 2026-09-02,PTT.BK,strong
 2026-09-03,PTT.BK,strong
 2026-09-04,PTT.BK,strong
@@ -1802,7 +1799,6 @@ date,yahoo,groups
 2026-10-28,PTT.BK,strong
 2026-10-29,PTT.BK,strong
 2026-10-30,PTT.BK,strong
-2026-09-01,PTTEP.BK,strong
 2026-09-02,PTTEP.BK,strong
 2026-09-03,PTTEP.BK,strong
 2026-09-04,PTTEP.BK,strong
@@ -1829,7 +1825,7 @@ date,yahoo,groups
 2026-10-29,PTTEP.BK,strong|star
 2026-10-30,PTTEP.BK,strong
 2026-11-23,PTTEP.BK,mom
-2026-09-01,PTTGC.BK,pass|mom|strong|star
+2026-11-27,PTTEP.BK,watch
 2026-09-02,PTTGC.BK,strong|star
 2026-09-03,PTTGC.BK,strong|star
 2026-09-04,PTTGC.BK,strong
@@ -1885,6 +1881,7 @@ date,yahoo,groups
 2026-11-24,PTTGC.BK,mom
 2026-11-25,PTTGC.BK,mom
 2026-11-26,PTTGC.BK,mom
+2026-11-27,PTTGC.BK,mom
 2026-09-08,QH.BK,watch
 2026-09-09,QH.BK,watch
 2026-10-22,QH.BK,strong
@@ -1966,6 +1963,7 @@ date,yahoo,groups
 2026-11-24,RCL.BK,mom
 2026-11-25,RCL.BK,mom
 2026-11-26,RCL.BK,mom
+2026-11-27,RCL.BK,mom
 2026-10-19,SAWAD.BK,watch|star
 2026-10-20,SAWAD.BK,star
 2026-10-21,SAWAD.BK,watch|star
@@ -1975,7 +1973,6 @@ date,yahoo,groups
 2026-11-05,SAWAD.BK,watch|star
 2026-11-10,SAWAD.BK,watch
 2026-11-12,SAWAD.BK,watch
-2026-09-01,SCB.BK,strong
 2026-09-07,SCB.BK,strong
 2026-09-14,SCB.BK,strong
 2026-09-15,SCB.BK,strong
@@ -2006,7 +2003,7 @@ date,yahoo,groups
 2026-11-18,SCB.BK,strong
 2026-11-23,SCB.BK,strong
 2026-11-24,SCB.BK,strong
-2026-09-01,SCC.BK,strong
+2026-11-27,SCB.BK,strong
 2026-09-02,SCC.BK,strong
 2026-09-04,SCC.BK,strong
 2026-09-07,SCC.BK,strong|star
@@ -2037,7 +2034,6 @@ date,yahoo,groups
 2026-10-27,SCC.BK,strong|star
 2026-10-28,SCC.BK,strong|star
 2026-10-29,SCC.BK,star
-2026-09-01,SCGP.BK,pass|mom|strong|star
 2026-09-02,SCGP.BK,pass|mom
 2026-09-03,SCGP.BK,mom
 2026-09-04,SCGP.BK,pass|mom
@@ -2102,7 +2098,6 @@ date,yahoo,groups
 2026-09-25,SPALI.BK,watch|star
 2026-09-28,SPALI.BK,watch
 2026-10-26,SPALI.BK,watch|star
-2026-09-01,SPRC.BK,pass|mom|strong
 2026-09-02,SPRC.BK,pass|mom|strong
 2026-09-03,SPRC.BK,pass|mom|strong
 2026-09-04,SPRC.BK,pass|mom|strong
@@ -2162,7 +2157,7 @@ date,yahoo,groups
 2026-11-24,SPRC.BK,mom
 2026-11-25,SPRC.BK,mom
 2026-11-26,SPRC.BK,mom
-2026-09-01,STA.BK,strong|purple|star
+2026-11-27,SPRC.BK,pass|mom|watch
 2026-09-02,STA.BK,strong|star
 2026-09-03,STA.BK,strong|star
 2026-09-04,STA.BK,strong|star
@@ -2219,7 +2214,7 @@ date,yahoo,groups
 2026-11-24,STA.BK,mom
 2026-11-25,STA.BK,mom
 2026-11-26,STA.BK,mom
-2026-09-01,STECON.BK,pass|mom
+2026-11-27,STA.BK,mom
 2026-09-02,STECON.BK,pass|mom
 2026-09-03,STECON.BK,pass|mom
 2026-09-04,STECON.BK,pass|mom
@@ -2279,7 +2274,7 @@ date,yahoo,groups
 2026-11-24,STECON.BK,mom
 2026-11-25,STECON.BK,mom
 2026-11-26,STECON.BK,mom
-2026-09-01,STGT.BK,pass|mom|strong
+2026-11-27,STECON.BK,mom
 2026-09-02,STGT.BK,mom
 2026-09-03,STGT.BK,pass|mom|strong
 2026-09-04,STGT.BK,pass|mom|strong
@@ -2326,7 +2321,6 @@ date,yahoo,groups
 2026-11-20,STGT.BK,mom
 2026-11-24,STGT.BK,mom
 2026-11-25,STGT.BK,mom
-2026-09-01,TASCO.BK,strong
 2026-09-02,TASCO.BK,strong
 2026-09-03,TASCO.BK,strong
 2026-09-04,TASCO.BK,strong
@@ -2400,7 +2394,7 @@ date,yahoo,groups
 2026-11-23,TCAP.BK,watch
 2026-11-24,TCAP.BK,watch
 2026-11-26,TCAP.BK,mom
-2026-09-01,TFG.BK,mom
+2026-11-27,TCAP.BK,pass|mom|watch
 2026-09-02,TFG.BK,mom
 2026-09-03,TFG.BK,pass|mom|strong
 2026-09-04,TFG.BK,mom
@@ -2460,6 +2454,7 @@ date,yahoo,groups
 2026-11-24,TFG.BK,mom
 2026-11-25,TFG.BK,mom
 2026-11-26,TFG.BK,mom
+2026-11-27,TFG.BK,mom
 2026-09-18,THAI.BK,watch|star
 2026-09-21,THAI.BK,star
 2026-09-22,THAI.BK,watch|star
@@ -2542,7 +2537,7 @@ date,yahoo,groups
 2026-11-10,TOA.BK,strong|purple|star
 2026-11-11,TOA.BK,strong|purple|star
 2026-11-18,TOA.BK,strong
-2026-09-01,TOP.BK,pass|mom|strong
+2026-11-27,TOA.BK,strong
 2026-09-02,TOP.BK,pass|mom|strong|star
 2026-09-03,TOP.BK,pass|mom|strong
 2026-09-04,TOP.BK,pass|mom
@@ -2602,6 +2597,7 @@ date,yahoo,groups
 2026-11-24,TOP.BK,mom
 2026-11-25,TOP.BK,mom
 2026-11-26,TOP.BK,mom
+2026-11-27,TOP.BK,mom
 2026-09-07,TRUE.BK,watch
 2026-09-09,TRUE.BK,watch
 2026-10-26,TRUE.BK,strong|star
@@ -2615,7 +2611,6 @@ date,yahoo,groups
 2026-11-13,TRUE.BK,star
 2026-11-16,TRUE.BK,strong|star
 2026-11-17,TRUE.BK,star
-2026-09-01,TTB.BK,pass|mom|strong
 2026-09-02,TTB.BK,pass|mom|strong|star
 2026-09-03,TTB.BK,pass|mom|strong|star
 2026-09-04,TTB.BK,pass|mom|strong|star
@@ -2727,7 +2722,7 @@ date,yahoo,groups
 2026-11-10,WHA.BK,strong
 2026-11-11,WHA.BK,strong
 2026-11-12,WHA.BK,strong
-2026-09-01,WHAUP.BK,pass|mom
+2026-11-27,WHA.BK,mom
 2026-09-02,WHAUP.BK,pass|mom
 2026-09-03,WHAUP.BK,mom
 2026-09-04,WHAUP.BK,pass|mom
@@ -2787,3 +2782,4 @@ date,yahoo,groups
 2026-11-24,WHAUP.BK,mom
 2026-11-25,WHAUP.BK,mom
 2026-11-26,WHAUP.BK,mom
+2026-11-27,WHAUP.BK,mom
