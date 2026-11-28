@@ -37,7 +37,9 @@ PRICES_CSV = os.path.join(HERE, "..", "files", "assets_prices.csv")
 SET100_CSV = os.path.join(HERE, "..", "files", "set100.csv")  # รายชื่อจาก set.or.th อัปเดตทุก ม.ค./ก.ค.
 US_CSV = os.path.join(HERE, "..", "files", "us_indices.csv")  # สร้างด้วย tools/fetch_us_lists.py
 
-DEFAULT_WATCHLIST = ["^GSPC", "^IXIC", "^SET.BK", "NVDA", "AAPL", "MSFT", "TSLA", "NBIS", "CRWV", "DRAM", "RAM", "SVIX", "^VIX", "SMH", "QQQ", "SQQQ", "JEPQ", "GC=F", "BTC-USD", "THB=X"]
+DEFAULT_WATCHLIST = ["^GSPC", "^IXIC", "^SET.BK", "NVDA", "AAPL", "MSFT", "TSLA", "NBIS", "CRWV", "DRAM", "RAM", "SVIX", "^VIX", "SMH", "QQQ", "SQQQ", "JEPQ",
+                     "XLK", "XLC", "XLY", "XLP", "XLF", "XLV", "XLI", "XLE", "XLB", "XLRE", "XLU",
+                     "GC=F", "BTC-USD", "THB=X"]
 
 # period -> interval ที่ Yahoo อนุญาต (intraday ย้อนหลังได้จำกัด)
 PERIODS = {
@@ -341,7 +343,16 @@ set100 = load_set100()
 us = load_us()
 # ตัวเลือกกราฟ/เปรียบเทียบ = Watchlist + หุ้น SET100 + หุ้นสหรัฐฯ ในดัชนี
 world = load_world()
-all_syms = list(dict.fromkeys(watchlist + list(world["yahoo"]) + list(set100["yahoo"]) + list(us["yahoo"])))
+# ETF รายกลุ่มอุตสาหกรรมสหรัฐฯ (SPDR Select Sector) ครบ 11 กลุ่ม · เลือกดูในแท็บกราฟ/ข้อมูลพื้นฐาน/เปรียบเทียบได้
+SECTOR_ETFS = {
+    "XLK": "กลุ่มเทคโนโลยี (Technology)", "XLC": "กลุ่มสื่อสาร (Communication Services)",
+    "XLY": "กลุ่มสินค้าฟุ่มเฟือย (Consumer Discretionary)", "XLP": "กลุ่มสินค้าจำเป็น (Consumer Staples)",
+    "XLF": "กลุ่มการเงิน (Financials)", "XLV": "กลุ่มการแพทย์ (Health Care)", "XLI": "กลุ่มอุตสาหกรรม (Industrials)",
+    "XLE": "กลุ่มพลังงาน (Energy)", "XLB": "กลุ่มวัสดุ (Materials)", "XLRE": "กลุ่มอสังหาริมทรัพย์ (Real Estate)",
+    "XLU": "กลุ่มสาธารณูปโภค (Utilities)",
+}
+all_syms = list(dict.fromkeys(watchlist + list(world["yahoo"]) + list(SECTOR_ETFS) + list(set100["yahoo"]) + list(us["yahoo"])))
+names.update({k: f"SPDR ETF · {v}" for k, v in SECTOR_ETFS.items()})
 names.update({r.yahoo: r.name for r in us.itertuples()})
 names.update({r.yahoo: f"{r.country} · {r.index_name}" for r in world.itertuples()})
 

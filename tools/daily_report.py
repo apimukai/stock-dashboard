@@ -20,7 +20,7 @@ import streamlit as st
 from market_mood import mood_data, compute_mood, divergence_warning, signal_states, zone_of, COMPONENTS, STATES
 from market_allocation import allocation_now
 from set_signals import (load_cache, load_prices, streak_table, cache_updated_at, BOX, signal_table, buy_streaks,
-                         load_my_list, newbuy_results, _nb_files, NEWBUY_MAX)
+                         load_my_list, load_list, LIST_CSV, newbuy_results, _nb_files, NEWBUY_MAX)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FILES = os.path.join(HERE, "..", "files")
@@ -33,7 +33,7 @@ EXTRA = ["GC=F", "CL=F", "BTC-USD", "TLT"]  # สินทรัพย์อื�
 US_IDX = {"^GSPC", "^IXIC", "^DJI", "^RUT"}  # ใช้กฎ B ได้ (อารมณ์ตลาดคำนวณจากตลาดสหรัฐฯ)
 HOLD_IDX = ["^GSPC", "^IXIC", "^DJI", "^RUT", "^SET.BK"]
 MARKETS = [("TH", "🇹🇭 SET100", "^SET.BK"), ("US", "🇺🇸 S&P 500", "^GSPC")]
-NB_MARKETS = MARKETS + [("MY", "⭐ รายชื่อของฉัน", "^GSPC")]
+NB_MARKETS = MARKETS + [("SEC", "🏭 US Sector", "^GSPC"), ("MY", "⭐ รายชื่อของฉัน", "^GSPC")]
 NEAR_EXIT = 3.0  # % · ราคาห่างเส้นขาย X7 ไม่เกินเท่านี้ = ใกล้จุดขาย
 X7_STOP, X7_ATR, RR = 0.08, 3.0, 2.0
 TOP_N = 10
@@ -131,7 +131,7 @@ def _market_table(mk: str):
     """ตารางสัญญาณล่าสุดของตลาด: ผลคำนวณล่วงหน้า (ถ้ามี) ไม่งั้นคำนวณสด (รายชื่อของฉันมีไม่กี่ตัว คำนวณสดได้เร็ว)"""
     t, _ = load_cache(mk)
     if t is None:
-        syms = tuple(load_my_list()["yahoo"]) if mk == "MY" else ()
+        syms = tuple(load_list(mk)["yahoo"]) if mk in LIST_CSV else ()
         if not syms:
             return None
         t = signal_table(syms, "D", mk)

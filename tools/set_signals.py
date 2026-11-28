@@ -420,16 +420,24 @@ def load_prices(syms: tuple, period: str = "10y") -> dict:
 MY_CSV = os.path.join(FILES, "my_list.csv")  # รายชื่อของฉัน: หุ้น/ETF นอกดัชนีที่อยากให้สแกนสัญญาณด้วย
 
 
-def load_my_list() -> pd.DataFrame:
+SEC_CSV = os.path.join(FILES, "us_sectors.csv")  # US Sector: ETF รายกลุ่มอุตสาหกรรม SPDR 11 กลุ่ม
+LIST_CSV = {"MY": MY_CSV, "SEC": SEC_CSV}  # ตลาดที่เป็น "รายชื่อ" (ไม่ใช่ดัชนี) · จัดอันดับโมเมนตัมเทียบหุ้น S&P 500
+
+
+def load_list(market: str) -> pd.DataFrame:
     try:
-        return pd.read_csv(MY_CSV, comment="#", encoding="utf-8-sig")
+        return pd.read_csv(LIST_CSV[market], comment="#", encoding="utf-8-sig")
     except Exception:
         return pd.DataFrame(columns=["yahoo", "name", "kind"])
 
 
+def load_my_list() -> pd.DataFrame:
+    return load_list("MY")
+
+
 def load_sectors(market: str = "TH") -> pd.DataFrame:
-    if market == "MY":
-        m = load_my_list()
+    if market in LIST_CSV:
+        m = load_list(market)
         return pd.DataFrame({"yahoo": m["yahoo"], "sector": m["kind"], "industry": m["name"]})
     if market == "US":  # GICS sector + ชื่อบริษัทจาก files/us_indices.csv
         p = os.path.join(FILES, "us_indices.csv")
@@ -458,7 +466,7 @@ def period_of(market: str) -> str:
 
 # ======================= บันทึกรายชื่อหุ้นเด่นรายวัน (files/signal_log/<ตลาด>_<ปี>.csv) =======================
 LOG_DIR = os.path.join(FILES, "signal_log")
-LOG_KEY = {"TH": "set100", "US": "sp500", "MY": "mylist"}
+LOG_KEY = {"TH": "set100", "US": "sp500", "MY": "mylist", "SEC": "ussector"}
 LOG_COLS = ["date", "yahoo", "symbol", "groups", "verdict", "score", "spec", "box", "dir", "mom", "mom_rank", "price"]
 
 
@@ -660,8 +668,8 @@ def _render_log_results(market: str, syms: tuple):
 # GitHub Actions บันทึกทุกวันทำการ -> files/signal_log/newbuy_<set100|sp500>_<ปี>.csv
 # 1 ไม้ = วันแรกที่ขึ้นสัญญาณซื้อ (days = 1) · ซื้อที่ราคาเปิดวันทำการถัดไป · ขายตามกฎ X7 (stop −8% + trailing 3×ATR)
 NB_COLS = ["date", "yahoo", "symbol", "days", "n_sup", "mom_rank", "best", "price", "score"]
-NB_COST = {"TH": 0.003, "US": 0.001, "MY": 0.001}  # ค่าซื้อขายไปกลับโดยประมาณ
-NB_INDEX = {"TH": "^SET.BK", "US": "^GSPC", "MY": "^GSPC"}
+NB_COST = {"TH": 0.003, "US": 0.001, "MY": 0.001, "SEC": 0.001}  # ค่าซื้อขายไปกลับโดยประมาณ
+NB_INDEX = {"TH": "^SET.BK", "US": "^GSPC", "MY": "^GSPC", "SEC": "^GSPC"}
 
 
 def newbuy_rows(t: pd.DataFrame, market: str) -> pd.DataFrame:
@@ -839,14 +847,14 @@ def signal_table(syms: tuple, tf: str = "D", market: str = "TH", asof=None) -> p
     t["stale"] = (t["date"] < t["date"].max() - pd.Timedelta(days=7)) | (t["gap_days"] > 10)
     sec = load_sectors(market)
     t = t.merge(sec, on="yahoo", how="left")
-    if market in ("US", "MY"):
+    if market in ("US", "MY", "SEC"):
         from sector_heatmap import market_caps
         t["mcap"] = t["yahoo"].map(market_caps(tuple(t["yahoo"])))
     else:
         t["mcap"] = t["price"] * t["shares"]
     t["mom_rank"] = t["mom"].where(~t["stale"]).rank(ascending=False, method="first")
     t["mom_n"] = int(t["mom_rank"].max()) if t["mom_rank"].notna().any() else 0
-    if market == "MY":  # รายชื่อสั้น -> จัดอันดับเทียบหุ้น S&P 500 (ผลคำนวณล่วงหน้า) ให้ Top 20 / 20% บนสุด มีความหมายเหมือนหน้า S&P 500
+    if market in LIST_CSV:  # รายชื่อสั้น -> จัดอันดับเทียบหุ้น S&P 500 (ผลคำนวณล่วงหน้า) ให้ Top 20 / 20% บนสุด มีความหมายเหมือนหน้า S&P 500
         ref, _ = load_cache("US")
         if ref is not None and ref["mom"].notna().sum() > 100:
             rm = np.sort(ref.loc[~ref["stale"], "mom"].dropna().to_numpy())
@@ -895,8 +903,9 @@ BT_CFG["% ครั้งที่ชนะ"] = st.column_config.NumberColumn(fo
 # ======================= UI =======================
 def _spectrum_fig(t: pd.DataFrame):
     t = t.copy()
-    med = t["mcap"].median()
-    t["mc"] = t["mcap"].fillna(med if pd.notna(med) else 1.0)
+    mcap = pd.to_numeric(t["mcap"], errors="coerce")  # ETF ไม่มี market cap -> None ทั้งคอลัมน์
+    med = mcap.median()
+    t["mc"] = mcap.fillna(med if pd.notna(med) else 1.0).astype(float)
     t["w"] = np.sqrt(t["mc"])
     t["w"] = t["w"] / t["w"].max()
     rows = []
@@ -1175,7 +1184,7 @@ SORTS = ["คำแนะนำการลงทุน (กล่องสี)"
          "โมเมนตัม 12 เดือน (มาก→น้อย)"]
 
 
-MARKETS = {"TH": "🇹🇭 SET100", "US": "🇺🇸 S&P 500", "MY": "⭐ รายชื่อของฉัน"}
+MARKETS = {"TH": "🇹🇭 SET100", "US": "🇺🇸 S&P 500", "SEC": "🏭 US Sector", "MY": "⭐ รายชื่อของฉัน"}
 
 
 def render_signals_hub(set100: pd.DataFrame, us: pd.DataFrame):
@@ -1185,12 +1194,12 @@ def render_signals_hub(set100: pd.DataFrame, us: pd.DataFrame):
     mk = mk or "TH"
     if mk == "TH":
         render_signals_tab(set100, market="TH")
-    elif mk == "MY":
-        my = load_my_list()
-        if my.empty:
-            st.info("ยังไม่มีรายชื่อ · เพิ่มได้ในไฟล์ files/my_list.csv")
+    elif mk in LIST_CSV:
+        lst = load_list(mk)
+        if lst.empty:
+            st.info(f"ยังไม่มีรายชื่อ · เพิ่มได้ในไฟล์ files/{os.path.basename(LIST_CSV[mk])}")
             return
-        render_signals_tab(my, market="MY")
+        render_signals_tab(lst, market=mk)
     else:
         render_signals_tab(us[us["sp500"] == 1], market="US")
 
@@ -1217,7 +1226,7 @@ def _date_picker(p: str, market: str):
 
 def render_signals_tab(universe: pd.DataFrame, clickable_table=None, market: str = "TH"):
     """สัญญาณเทคนิคของตลาดเดียว · market="TH" (SET100) หรือ "US" (S&P 500) · คีย์ session แยกกันตามตลาด"""
-    p = {"TH": "sig", "US": "usig", "MY": "msig"}[market]
+    p = {"TH": "sig", "US": "usig", "MY": "msig", "SEC": "ssig"}[market]
     ss = st.session_state
     if f"{p}_pick" in ss:  # หุ้นที่คลิกมาจากแผงหุ้นเด่น/ตาราง/Spectrum -> ตั้งค่าก่อนสร้าง selectbox
         ss[f"{p}_detail"] = ss.pop(f"{p}_pick")
@@ -1280,6 +1289,10 @@ def render_signals_tab(universe: pd.DataFrame, clickable_table=None, market: str
     else:
         st.info(f"🧮 **ย้อนดูวันที่ {day:%d %b %Y}** (คำนวณย้อนหลังจากราคาปิด ณ วันนั้น · ไม่มีบันทึกจริงของวันนี้) · "
                 "อาจต่างจากที่เคยแสดงจริงเล็กน้อย เพราะใช้รายชื่อหุ้นในดัชนีปัจจุบัน")
+    if market == "SEC":
+        st.info("🏭 **US Sector** · ETF รายกลุ่มอุตสาหกรรมของสหรัฐฯ (SPDR Select Sector) ครบ 11 กลุ่ม · ใช้ดูว่ากลุ่มไหนแข็ง/อ่อน "
+                "และเงินกำลังย้ายเข้ากลุ่มไหน · อันดับโมเมนตัม = อันดับเมื่อเทียบหุ้น S&P 500 ทั้งหมด · "
+                "กฎสัญญาณและผล backtest ทำมาจากหุ้นรายตัว ใช้กับ ETF ได้แต่ยังไม่ได้ทดสอบแยก")
     if market == "MY":
         short = [y for y in syms if y not in set(t["yahoo"])]
         st.info("⭐ **รายชื่อของฉัน** (แก้ได้ในไฟล์ files/my_list.csv) · อันดับโมเมนตัม = อันดับเมื่อเทียบหุ้น S&P 500 ทั้งหมด · "
@@ -1298,7 +1311,7 @@ def render_signals_tab(universe: pd.DataFrame, clickable_table=None, market: str
     m[6].metric("★ น่าจับตา", int(t["watch"].sum()))
 
     # ----- ความต่อเนื่อง: ติดกลุ่มมากี่วัน / เพิ่งเข้า / หลุด (คำนวณย้อนหลัง n วันทำการ) -----
-    cap = {"TH": 60, "US": 40, "MY": 40}[market]
+    cap = {"TH": 60, "US": 40, "MY": 40, "SEC": 40}[market]
     if h_cached is not None:
         h = h_cached
     else:
@@ -1329,9 +1342,9 @@ def render_signals_tab(universe: pd.DataFrame, clickable_table=None, market: str
     st.markdown(f"<div id='{p}-detail'></div>", unsafe_allow_html=True)
     st.markdown("#### 🔍 เหตุผลรายตัว" + ("" if asof is None else f" ณ {day:%d %b %Y}"))
     opts = sorted(t["yahoo"])
-    names = dict(zip(t["yahoo"], t["industry"])) if market in ("US", "MY") else {}
+    names = dict(zip(t["yahoo"], t["industry"])) if market in ("US", "MY", "SEC") else {}
     if ss.get(f"{p}_detail") not in opts:
-        hl = t.sort_values("mom_rank") if market in ("US", "MY") else \
+        hl = t.sort_values("mom_rank") if market in ("US", "MY", "SEC") else \
             t[t["box"].isin(["G", "B"])].sort_values(["score", "spec"], ascending=False)
         ss[f"{p}_detail"] = hl["yahoo"].iloc[0] if len(hl) else opts[0]
     d1, d2 = st.columns([2, 1])
@@ -1415,7 +1428,7 @@ def render_signals_tab(universe: pd.DataFrame, clickable_table=None, market: str
             "ติดกลุ่มต่อเนื่อง": [" ".join(("🆕" if r[f"stk_{k}"] == 1 else "") + f"{GROUP_SHORT[k]}{r[f'stk_{k}']}ว"
                                            for k in GKEYS if r[f"stk_{k}"] > 0) for _, r in v.iterrows()],
         })
-        if market in ("US", "MY"):
+        if market in ("US", "MY", "SEC"):
             tbl.insert(2, "บริษัท", v["industry"])
         _picker_table(tbl, f"{p}_tbl", p, use_container_width=True, height=560, column_config={
             "ราคา": st.column_config.NumberColumn(format="%.2f"),
@@ -1449,7 +1462,7 @@ def render_signals_tab(universe: pd.DataFrame, clickable_table=None, market: str
         a2.markdown("**★ หุ้นน่าจับตา:** " + (", ".join(top[top["watch"]]["symbol"]) or "ไม่มีวันนี้"))
 
     with tab_c:
-        if market in ("US", "MY"):
+        if market in ("US", "MY", "SEC"):
             st.markdown(BT_US)
         else:
             if BT_INFO:
